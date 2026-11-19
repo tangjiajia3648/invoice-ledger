@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>进项发票台账</title>
+<style>
+* { box-sizing: border-box }
+body { margin: 0; color: #303747; background: #f1f4f8; font: 14px "Microsoft YaHei", sans-serif }
+header { display: flex; gap: 6px; padding: 14px 20px 0; background: #e6ebf2 }
+header span { padding: 12px 20px; background: #f3f5f8; border-radius: 6px 6px 0 0 }
+header .active { color: #2585ef; background: white; font-weight: 600 }
+main { margin: 0 16px 20px; background: white; border: 1px solid #e3e8f0; border-top: none }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 15px }
+h1 { font-size: 17px; margin: 0 10px 0 0 }
+button, input, select { font: inherit; border: 1px solid #d6deea; border-radius: 4px; background: white; color: inherit; padding: 7px 10px }
+button { cursor: pointer }
+button.primary { color: white; background: #3592f5; border-color: #3592f5 }
+.search { margin-left: auto; width: 280px }
+.scroll { overflow-x: auto }
+table { width: 100%; min-width: 1240px; border-collapse: collapse }
+th, td { border: 1px solid #e6ebf2; padding: 11px 12px; text-align: left; white-space: nowrap }
+th.number { z-index: 2; background: #f4f6fa }
+th { background: #f4f6fa; color: #556174; font-weight: 600 }
+tbody + tbody tr:first-child td { border-top-color: #cdd8e7 }
+.invoice { background: #fcfdff; font-variant-numeric: tabular-nums }
+.number { position: sticky; left: 0; z-index: 1; box-shadow: 2px 0 0 #d6e2f2 }
+.split { border-left: 2px solid #d6e2f2 }
+.money { text-align: right; font-variant-numeric: tabular-nums }
+.link { padding: 0; border: 0; color: #2383e5; background: transparent }
+.line-number { text-decoration: underline }
+.line-state { font-weight: 600 }.line-state.pending{color:#b86a00}.line-state.review{color:#7952c7}.line-state.deducted{color:#009f85}
+.muted { color: #697589 }
+footer { padding: 12px 15px; color: #647185 }
+dialog { width: min(540px, 90vw); border: 1px solid #d6deea; border-radius: 8px; padding: 22px; color: inherit }
+dialog::backdrop { background: #27384e55 }
+dialog h2 { margin-top: 0; font-size: 17px }
+dialog p { line-height: 1.65 }
+</style>
+
+<style>
+header span{cursor:pointer}.toolbar select{max-width:180px}.toolbar .search{width:240px}
+dialog{width:min(1000px,94vw)}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.fields label{display:grid;gap:6px}
+.status{color:#2581d7}.warning{color:#c83e31}.notice{padding:10px 0;color:#c83e31;min-height:35px}
+.actions{display:flex;gap:10px;justify-content:flex-end}.small-table{min-width:0;width:100%;margin:14px 0}.subtle{font-size:12px;color:#7d8798}.number{min-width:215px}
+ .status-success{color:#00bfa5;font-weight:700}.status-progress{color:#1890ff;font-weight:700}.status-danger{color:#ff4d4f;font-weight:700}.status-neutral{color:#909399;font-weight:600}
+
+dialog{position:fixed;inset:0 0 0 auto;margin:0;width:min(1100px,92vw);height:100dvh;max-height:100dvh;max-width:92vw;border-radius:0;border:0;padding:24px;box-shadow:-6px 0 26px #21374b26;overflow:auto}
+dialog #actions{position:sticky;bottom:-24px;background:white;padding:16px 0;border-top:1px solid #e4eaf2}
+#column-headers th{background:#f4f6fa} .version{padding:7px 16px;color:#66778c;background:#f7faff;font-size:12px}
+
+.row-menu{position:relative}.row-menu summary{cursor:pointer;list-style:none;color:#64788c;font-size:24px;padding:0 12px}.row-menu>div{position:absolute;z-index:10;left:30px;top:0;min-width:200px;padding:8px;background:white;border:1px solid #dbe3ee;box-shadow:0 4px 18px #24394f26;display:grid;gap:4px}.row-menu button{text-align:left;padding:8px}
+
+.drawer-close{position:sticky;float:right;top:0;z-index:20;font-size:26px;border:0;background:white;color:#66788b;padding:0 5px}#title{padding-right:45px}
+.excess-tag{display:inline-block;margin-top:5px;padding:2px 7px;border:1px solid #ffccc7;background:#fff2f0;border-radius:3px;color:#c43d35;font-size:12px}
+button:disabled{cursor:not-allowed;color:#a8b1bc!important}.row-menu>div{min-width:240px}
+.invoice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:18px 0}.invoice-grid div{white-space:normal;line-height:1.7}.invoice-grid small{display:block;color:#718096}
+.tabbar{display:flex;gap:18px;border-bottom:1px solid #dde5ef;padding:14px 0}.tabbar button{border:0;background:transparent;color:#2383e5}
+</style>
+<header><span>首页</span><span id="nav-register">进项发票登记</span><span id="nav-batch">进项发票批量登记</span><span class="active">进项发票台账</span></header>
+<div class="version">2026-11-19 订单金额更新版 · 采购订单号后展示订单关联含税金额</div><main><div class="toolbar"><h1>进项发票台账</h1><button class="primary" id="sync">立即拉取</button><button id="import">批量导入</button><button id="auth-refresh">认证状态刷新</button><button id="batch-other">批量标记为其他系统匹配</button><button id="push">推送浪潮做账</button><button id="register">登记</button><button id="batch">批量登记</button>
+<input id="search" class="search" placeholder="发票号码" aria-label="搜索">
+<label><input type="checkbox" id="purchase" checked> 采购发票</label><label><input type="checkbox" id="expense"> 费用发票</label><button id="filter-toggle">筛选</button><button id="reset-filters">重置</button><button id="column-settings">列设置</button></div>
+<div id="filter-panel" hidden style="padding:16px;border-top:1px solid #e6ebf2"><div class="fields" style="grid-template-columns:repeat(3,minmax(220px,1fr))"><label>开票方名称<input id="seller-filter"></label><label>开票方统一社会信用代码<input id="seller-tax-filter"></label><label>开票人<input id="issuer-filter"></label><label>开票日期<span><input id="invoice-date-start" type="date" aria-label="开票日期开始"> 至 <input id="invoice-date-end" type="date" aria-label="开票日期结束"></span></label><label>购买方名称<input id="buyer-filter"></label><label>购买方统一社会信用代码<input id="buyer-tax-filter"></label><label>匹配状态<select id="state"><option value="">全部</option><option>未匹配</option><option>已匹配-全额（系统）</option><option>待人工匹配</option><option>已匹配-全额（人工）</option><option>已匹配-部分（人工）</option><option>已匹配-全额（其他系统）</option></select></label><label>来源<select id="origin-filter"><option value="">全部</option><option>自动拉取</option><option>手动拉取</option><option>导入</option></select></label><label>认证状态<select id="auth-filter"><option value="">全部</option><option>待认证</option><option>已认证</option><option>无需认证</option></select></label><label>认证日期<span><input id="tax-date-start" type="month" aria-label="认证日期开始"> 至 <input id="tax-date-end" type="month" aria-label="认证日期结束"></span></label><label>做账状态<select id="account-filter"><option value="">全部</option><option>未生成</option><option>待推送</option><option>已推送</option><option>推送失败</option></select></label><label>勾选认证时间<span><input id="confirm-date-start" type="date" aria-label="勾选认证时间开始"> 至 <input id="confirm-date-end" type="date" aria-label="勾选认证时间结束"></span></label><label>采购订单号<input id="order-filter"></label><label>金蝶采集状态<select id="collection-filter"><option value="">全部</option><option>待采集</option><option>已采集</option></select></label><label>登记超额<select id="excess-filter"><option value="">全部</option><option>超额</option><option>未超额</option></select></label><label>红冲原因<input id="red-filter" placeholder="输入原因关键词"></label></div><div class="actions"><button class="primary" id="apply-filters">查询</button></div></div><div class="scroll"><table id="ledger"><thead><tr id="column-headers"></tr></thead></table></div>
+<footer id="count"></footer></main>
+<dialog id="dialog"><button id="drawer-close" aria-label="关闭抽屉" class="drawer-close">×</button><h2 id="title"></h2><div id="content"></div><div class="notice" id="message" role="status"></div><div class="actions" id="actions"></div></dialog>
+<script>
+const money=v=>new Intl.NumberFormat('zh-CN',{style:'currency',currency:'CNY'}).format(v);
+const effective=['审核中','待确认','完成','抵扣'];
+const live=line=>effective.includes(line.state);
+const settled=line=>['完成','抵扣'].includes(line.state);
+const makeLine=(id,order,amount,state,source)=>({id,order,amount,state,source});
+const invoices=[
+{number:'26312000000000861352',seller:'上海瑞丰贸易有限公司',synced:true,total:1000,origin:'金蝶自动拉取',lines:[makeLine('JXDJ-45131','PO-0831 / 001',350,'完成','系统'),makeLine('JXDJ-45131','PO-0845 / 002',250,'完成','系统'),makeLine('JXDJ-45132','PO-0845 / 002',400,'待确认','人工')]},
+{number:'26312000000000861353',seller:'上海华兴科技有限公司',synced:false,total:1000,origin:'手工登记',lines:[makeLine('JXDJ-45133','PO-0848 / 001',600,'完成','人工'),makeLine('JXDJ-45134','PO-0848 / 001',400,'审核中','人工')]},
+{number:'26312000000000861354',seller:'上海联达设备有限公司',synced:true,total:900,origin:'手工登记',lines:[makeLine('JXDJ-45135','PO-0852 / 001',600,'完成','人工'),makeLine('JXDJ-45136','PO-0853 / 001',400,'待确认','人工')]},
+{number:'26312000000000861355',seller:'上海诚通商贸有限公司',synced:true,total:800,origin:'金蝶手动拉取',lines:[]},
+{number:'26312000000000861356',seller:'上海信达设备有限公司',synced:true,total:1200,origin:'金蝶自动拉取',lines:[makeLine('JXDJ-45137','PO-0855 / 001',700,'完成','系统'),makeLine('JXDJ-45138','PO-0856 / 001',500,'抵扣','人工')]},
+{number:'26312000000000861357',seller:'上海远通有限公司',synced:true,total:500,origin:'金蝶自动拉取',lines:[makeLine('JXDJ-45139','PO-0860 / 001',500,'退回','系统')]}
+];
+const columns=[{"id":0,"label":"发票号码"},{"id":14,"label":"开票方名称"},{"id":6,"label":"发票金额"},{"id":8,"label":"已匹配金额"},{"id":5,"label":"匹配状态"},{"id":"registration","label":"登记明细编号"},{"id":"order","label":"采购订单号"},{"id":22,"label":"开票日期"},{"id":10,"label":"认证状态"},{"id":12,"label":"做账状态"},{"id":1,"label":"发票类型"},{"id":3,"label":"蓝/红"},{"id":4,"label":"发票状态"},{"id":9,"label":"未匹配金额"},{"id":7,"label":"发票税额"},{"id":2,"label":"台账建档来源"},{"id":11,"label":"认证日期"},{"id":13,"label":"勾选认证时间"},{"id":15,"label":"开票方统一社会信用代码/纳税人识别号"},{"id":16,"label":"购买方名称"},{"id":17,"label":"购买方统一社会信用代码/纳税人识别号"},{"id":18,"label":"PDF文件"},{"id":19,"label":"OFD文件"},{"id":20,"label":"XML文件"},{"id":21,"label":"开票人"},{"id":23,"label":"创建日期"},{"id":24,"label":"更新日期"},{"id":25,"label":"备注"},{"id":"operation","label":"操作"}];
+const defaultColumns=[0,14,6,8,5,"registration","order",22,10,12,1,3,4,"operation"];
+columns.splice(columns.findIndex(column=>column.id==='order')+1,0,{id:'orderAmount',label:'订单关联金额'});
+defaultColumns.push('orderAmount');
+columns.unshift(columns.splice(columns.findIndex(c=>c.id==='operation'),1)[0]);
+columns.splice(columns.findIndex(c=>c.id===4)+1,0,{id:'redReason',label:'红冲原因'});
+defaultColumns.push('redReason',18,19,20);
+let visibleColumns=new Set(defaultColumns);
+invoices[0].redForms=[{code:'HZXX-20261119001',date:'2026-11-19',amount:200,reason:'开票有误，商品名称填写错误'}];
+invoices[4].redForms=[{code:'HZXX-20261119002',date:'2026-11-19',amount:100,reason:'销售折让，价格调整'},{code:'HZXX-20261119003',date:'2026-11-19',amount:150,reason:'部分退货'}];
+const drafts=[];
+let next=10;
+const $=s=>document.querySelector(s);
+function amounts(invoice){
+ const matched=invoice.lines.filter(settled).reduce((s,l)=>s+l.amount,0);
+ const pending=invoice.lines.filter(l=>live(l)&&!settled(l)).reduce((s,l)=>s+l.amount,0);
+ return {matched,pending,excess:invoice.synced?Math.max(0,matched+pending-invoice.total):0,available:Math.max(0,invoice.total-matched-pending)};
+}
+function status(invoice){
+ if(invoice.otherSystem)return "已匹配-全额（其他系统）";
+ const a=amounts(invoice);
+ if(!a.matched)return a.pending?'登记处理中':'待人工匹配';
+ if(!invoice.synced)return '已匹配（人工）';
+ const sources=new Set(invoice.lines.filter(settled).map(l=>l.source));
+ const source=sources.size>1?'系统＋人工':[...sources][0];
+ if(a.matched>invoice.total)return '登记超额';
+ return (a.matched===invoice.total?'已匹配-全额':'已匹配-部分')+'（'+source+'）';
+}
+function render(){
+ const table=$('#ledger');table.querySelectorAll('tbody').forEach(x=>x.remove());
+ const displayed=columns.filter(column=>visibleColumns.has(column.id));
+ $('#column-headers').innerHTML=displayed.map(column=>'<th class="'+(column.id===0?'number':'')+'">'+column.label+'</th>').join('');
+ const visible=invoices.filter(i=>{
+ const all=[i.number,i.seller,...i.lines.flatMap(l=>[l.id,l.order])].join(' ');
+ const contains=(id,value)=>!$(id).value||String(value||'').includes($(id).value.trim());
+ const equals=(id,value)=>!$(id).value||$(id).value===value;
+ const inRange=(prefix,value)=>{
+ const start=$('#'+prefix+'-start').value,end=$('#'+prefix+'-end').value;
+ if((start||end)&&!value)return false;
+ return (!start||value>=start)&&(!end||value<=end);
+ };
+ const origin={'金蝶自动拉取':'自动拉取','金蝶手动拉取':'手动拉取','批量导入':'导入'}[i.origin]||'';
+ return $('#purchase').checked&&i.number.includes($('#search').value.trim())&&
+ contains('#seller-filter',i.seller)&&contains('#seller-tax-filter',i.sellerTax)&&contains('#issuer-filter',i.issuer)&&
+ contains('#buyer-filter','示例采购公司')&&contains('#buyer-tax-filter',i.buyerTax)&&
+ contains('#order-filter',i.lines.map(line=>line.order).join(' '))&&
+ equals('#collection-filter',i.synced?'已采集':'待采集')&&
+ equals('#excess-filter',amounts(i).excess>0?'超额':'未超额')&&
+ contains('#red-filter',(i.redForms||[]).map(f=>f.reason).join(' '))&&
+ equals('#state',status(i))&&equals('#origin-filter',origin)&&equals('#auth-filter','待认证')&&equals('#account-filter','未生成')&&
+ inRange('invoice-date','2026-11-18')&&inRange('tax-date',i.taxDate)&&inRange('confirm-date',i.confirmDate);
+ });
+ for(const invoice of visible){
+ const a=amounts(invoice),lines=invoice.lines.filter(live),rows=Math.max(1,lines.length);
+ const stateText=status(invoice);
+ const stateClass=stateText==='登记超额'?'status-danger':stateText.includes('全额')?'status-success':stateText==='未匹配'?'status-neutral':'status-progress';
+ const values=[invoice.number,'增值税专用发票',invoice.origin,'<span class="status-progress">蓝字发票</span>',invoice.synced?(invoice.redForms?'<span class="line-state pending">部分红冲</span>':'<span class="status-success">正常</span>'):'—','<span class="'+stateClass+'">'+stateText+'</span>',money(invoice.total)+(invoice.synced?'':' <span class="line-state">（待采集）</span>'),'—',money(a.matched)+(a.excess?'<br><span class="excess-tag">登记超额 '+money(a.excess)+'</span>':''),invoice.synced?money(Math.max(0,invoice.total-a.matched)):'—','待认证','—','未生成','—',invoice.seller,'—','示例采购公司','—','—','—','—','—','2026-11-18','2026-11-18','2026-11-18','—'];
+
+ const tbody=document.createElement('tbody');
+ tbody.innerHTML=Array.from({length:rows},(_,rowIndex)=>{
+ const line=lines[rowIndex];
+ const cells=displayed.map(column=>{
+ if(column.id==='registration'){
+ return '<td>'+(line?'<button class="link" data-line="'+line.id+'" data-invoice="'+invoice.number+'">'+line.id+'</button>'+(line.state==='完成'?'':'<span class="line-state '+(line.state==='待确认'?'pending':line.state==='审核中'?'review':'deducted')+'">（'+line.state+'）</span>'):'-')+'</td>';
+ }
+ if(column.id==='orderAmount'){
+ return '<td class="money" title="当前发票通过本笔登记关联到该订单的含税金额">'+(line?money(line.amount):'-')+'</td>';
+ }
+ if(column.id==='order'){
+ return '<td>'+(line?'<button class="link" data-order="'+line.order+'" data-invoice="'+invoice.number+'">'+line.order.split(' / ')[0]+'</button>':'-')+'</td>';
+ }
+ if(rowIndex>0)return '';
+ if(column.id==='redReason'){
+ const forms=invoice.redForms||[];
+ return '<td rowspan="'+rows+'" style="white-space:normal;min-width:220px;max-width:300px">'+(forms.length?'<button class="link" data-red="'+invoice.number+'">'+forms.map(f=>f.reason).join('；')+'</button>':'-')+'</td>';
+ }
+ const canMatch=invoice.synced&&a.available>0&&!invoice.otherSystem;
+ const canOther=invoice.synced&&!a.matched&&!a.pending&&!invoice.otherSystem;
+ const menu='<details class="row-menu"><summary aria-label="发票操作">⋮</summary><div>'+
+ '<button class="link" data-invoice-detail="'+invoice.number+'">详情</button>'+
+ '<button class="link" data-match="'+invoice.number+'" '+(canMatch?'':'disabled title="当前发票无可匹配额度或尚未采集"')+'>手动匹配</button>'+
+ '<button class="link" data-other="'+invoice.number+'" '+(canOther?'':'disabled title="已有登记或状态不满足原操作条件"')+'>标记为其他系统匹配</button>'+
+ '<button class="link" data-ledger-history="'+invoice.number+'">台账变更记录</button>'+
+ '</div></details>';
+ const value=column.id==='operation'?menu:values[column.id];
+ return '<td rowspan="'+rows+'" class="invoice '+(column.id===0?'number':'')+([6,7,8,9].includes(column.id)?' money':'')+'">'+value+'</td>';
+ });
+ return '<tr>'+cells.join('')+'</tr>';
+ }).join('');
+ table.append(tbody);
+ }
+ $('#count').textContent='共 '+visible.length+' 张发票 · '+drafts.length+' 份草稿（演示数据，仅本页有效）';
+}
+function close(){ $('#dialog').close(); }
+$('#drawer-close').onclick=close;
+function open(title,content,buttons=[]){
+ $('#title').textContent=title;$('#content').innerHTML=content;$('#message').textContent='';$('#actions').innerHTML='';
+ for(const item of buttons){
+ const button=document.createElement('button');button.textContent=item.label;if(item.primary)button.className='primary';button.onclick=item.action;$('#actions').append(button);
+ }
+ if(!$('#dialog').open)$('#dialog').showModal();
+}
+function registrationDetail(invoice,lineId){
+ const code=lineId;
+ const related=invoices.flatMap(record=>record.lines.filter(line=>line.id===code).map(line=>({record,line})));
+ const total=related.reduce((sum,item)=>sum+item.line.amount,0);
+ const rows=related.map(({record,line})=>'<tr><td>'+record.number+'</td><td>'+line.id+'</td><td><button class="link" data-order="'+line.order+'" data-invoice="'+record.number+'">'+line.order.split(' / ')[0]+'</button></td><td>'+money(line.amount)+'</td><td>'+line.state+'</td></tr>').join('');
+ open('进项发票登记详情','<div class="fields"><div>供应商：'+invoice.seller+'</div><div>业务员：—</div><div>发票类别：采购发票</div><div>制单员：—</div><div>制单时间：2026-11-18</div><div>单据状态：'+related[0].line.state+'</div><div>合计未税金额：—</div><div>合计税额：—</div><div>合计价税合计：'+money(total)+'</div><div>单据编号：'+code+'</div><div>备注：—</div><div>附件：—</div></div><h3>发票明细</h3><div style="overflow:auto"><table class="small-table"><tr><th>发票号码</th><th>登记明细编号</th><th>关联订单明细</th><th>价税合计</th><th>明细状态</th></tr>'+rows+'</table></div><p class="subtle">审批进度：'+related[0].line.state+'（演示数据）</p>');
+}
+function detail(invoice,lineId){
+ const a=amounts(invoice),lines=lineId?invoice.lines.filter(l=>l.id===lineId):invoice.lines;
+ const table='<div style="overflow:auto"><table class="small-table"><tr><th>登记明细</th><th>订单明细</th><th>含税金额</th><th>状态</th><th>方式</th><th>登记人</th><th>登记时间</th><th>最近操作人</th><th>最近操作</th><th>操作时间</th></tr>'+lines.map(l=>'<tr><td>'+l.id+'</td><td>'+l.order+'</td><td>'+money(l.amount)+'</td><td>'+l.state+'</td><td>'+l.source+'</td><td>张石磊</td><td>2026-11-18 09:30</td><td>'+(['退回','作废','报损'].includes(l.state)?'李敏':'张石磊')+'</td><td>'+l.state+'</td><td>2026-11-19 10:00</td></tr>').join('')+'</table></div><p class="subtle">登记人及操作记录均为演示数据。当前页包含有效登记及退回、作废、报损历史。</p>';
+ const selected=lines[0];
+ const buttons=[];
+ if(lineId&&selected&&live(selected)){
+ if(['审核中','待确认'].includes(selected.state))buttons.push({label:selected.state==='审核中'?'审核通过':'确认生效',primary:true,action:()=>{
+ if(selected.state==='待确认'&&a.excess){$('#message').textContent='超额时是否允许确认生效尚待评审，本演示暂拦截确认。';return;}
+ invoice.lines.filter(l=>l.id===lineId).forEach(l=>l.state=selected.state==='审核中'?'待确认':'完成');render();detail(invoice,lineId);
+ }});
+ for(const action of ['退回','报损','作废'])buttons.push({label:action,action:()=>{invoice.lines.filter(l=>l.id===lineId).forEach(l=>l.state=action);render();detail(invoice,lineId);}});
+ }
+ open(lineId||'全部登记明细及操作记录','<p>发票号码 '+invoice.number+'<br>票面金额 '+money(invoice.total)+(invoice.synced?'':'（待采集）')+' · 已匹配 '+money(a.matched)+(a.excess?'<br><span class="warning">登记超额 '+money(a.excess)+'</span>':'')+'</p><h3>全部登记明细</h3>'+table,buttons);
+}
+function register(batch=false){
+ open(batch?'进项发票批量登记':'进项发票登记','<div class="fields"><label>发票号码<input id="number" value="26312000000000861353" inputmode="numeric"></label><label>供应商<input id="seller" value="上海华兴科技有限公司"></label></div><p>填写本次订单明细及含税金额，登记金额自动汇总。</p><textarea id="orders" style="width:100%;height:100px;font:inherit" aria-label="订单明细及金额">'+(batch?'PO-0848 / 001,200\nPO-0849 / 001,100':'PO-0848 / 001,200')+'</textarea><p class="subtle">每行填写一个订单明细，英文逗号后填写含税金额。</p><p id="sum"></p><div id="repeat"></div>',[
+ {label:'保存草稿',action:()=>save(false)},
+ {label:'提交审核',primary:true,action:()=>save(true)}
+ ]);
+ let confirmedKey='';
+ function entries(){
+ return $('#orders').value.trim().split(/\n/).filter(Boolean).map(row=>{
+ const parts=row.split(',');return {order:parts[0].trim(),amount:Number(parts[1])};
+ });
+ }
+ $('#orders').oninput=()=>{$('#sum').textContent='本次登记金额 '+money(entries().reduce((s,l)=>s+(Number.isFinite(l.amount)?l.amount:0),0));};
+ $('#orders').oninput();
+ function save(submit){
+ const number=$('#number').value.trim(),seller=$('#seller').value.trim(),rows=entries();
+ if(!/^d+$/.test(number)||!seller||!rows.length||rows.some(l=>!l.order||!Number.isFinite(l.amount)||l.amount<=0)){$('#message').textContent='请填写票号、供应商及正确的订单含税金额。';return;}
+ let invoice=invoices.find(i=>i.number===number);
+ const total=rows.reduce((s,l)=>s+Math.round(l.amount*100),0)/100;
+ if(invoice&&invoice.synced&&total>amounts(invoice).available){$('#message').textContent='当前可登记 '+money(amounts(invoice).available)+'，本次 '+money(total)+'，超出 '+money(total-amounts(invoice).available)+'。已拦截本次操作。';return;}
+ const duplicate=invoice&&!invoice.synced&&rows.some(r=>invoice.lines.some(l=>live(l)&&l.order===r.order));
+ const key=number+JSON.stringify(rows);
+ if(submit&&duplicate&&confirmedKey!==key){
+ $('#message').textContent='重复登记提醒：同票同订单已有有效登记。';
+ const label=document.createElement('label'),checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.onchange=()=>{confirmedKey=checkbox.checked?key:'';};
+ label.append(checkbox,document.createTextNode(' 已核对原登记，确认继续本次登记'));$('#repeat').replaceChildren(label);return;
+ }
+ if(!submit){drafts.push({number,rows});close();render();return;}
+ if(!invoice){invoice={number,seller,total:0,synced:false,origin:'手工登记',lines:[]};invoices.push(invoice);}
+ if(!invoice.synced)invoice.total+=total;
+ const id='JXDJ-'+String(45130+next++);
+ rows.forEach(row=>invoice.lines.push(makeLine(id,row.order,row.amount,'审核中','人工')));
+ close();render();
+ }
+}
+
+function orderDetail(invoice,order){
+ const links=invoice.lines.filter(l=>l.order===order);
+ const total=links.filter(live).reduce((s,l)=>s+l.amount,0);
+ open('关联订单详情','<div class="fields"><div>采购订单号：'+order.split(' / ')[0]+'</div><div>供应商：'+invoice.seller+'</div><div>订单明细编号：'+order.split(' / ')[1]+'</div><div>业务员：—</div></div><h3>商品及发票关联明细</h3><div style="overflow:auto"><table class="small-table"><tr><th>产品名称</th><th>规格型号</th><th>单位</th><th>本次关联数量</th><th>含税单价</th><th>含税总价</th><th>税率</th><th>税额</th><th>未税总价</th></tr><tr><td>设备及配件（示例）</td><td>—</td><td>件</td><td>—</td><td>—</td><td>'+money(total)+'</td><td>—</td><td>—</td><td>—</td></tr></table></div><h3>关联登记</h3><table class="small-table"><tr><th>登记单号</th><th>含税关联金额</th><th>状态</th></tr>'+links.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table>');
+}
+function excessDetail(invoice){
+ const a=amounts(invoice),active=invoice.lines.filter(live);
+ open('登记超额明细','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>金蝶票面含税金额：'+money(invoice.total)+'</div><div>累计登记金额：'+money(a.matched+a.pending)+'</div><div class="warning">超出金额：'+money(a.excess)+'</div></div><p>以下为该票全部有效登记，请核对需要处理的登记明细。</p><table class="small-table"><tr><th>登记单号</th><th>采购订单号</th><th>登记含税金额</th><th>登记状态</th></tr>'+active.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td><button class="link" data-order="'+l.order+'" data-invoice="'+invoice.number+'">'+l.order.split(' / ')[0]+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table><p class="subtle">超额为整票合计差额，未自动指定某一条登记为错误明细。</p>');
+}
+function redDetail(invoice){
+ open('红冲原因','<p>发票号码：'+invoice.number+'</p>'+(invoice.redForms||[]).map(form=>'<p style="padding:16px;background:#f6f8fb">'+form.reason+'</p>').join(''));
+}
+function invoiceDetail(invoice){
+ const a=amounts(invoice);
+ const fields=[
+ ['发票号码',invoice.number],['发票类型','增值税专用发票'],['来源',invoice.origin],
+ ['蓝/红','蓝字发票'],['发票状态',invoice.redForms?'部分红冲':'正常'],['匹配状态',status(invoice)],
+ ['发票金额（未税）','—'],['发票税额','—'],['价税合计',money(invoice.total)],
+ ['已匹配金额',money(a.matched)],['未匹配金额',invoice.synced?money(Math.max(0,invoice.total-a.matched)):'—'],
+ ['开票方名称',invoice.seller],['开票方统一社会信用代码/纳税人识别号','—'],
+ ['购买方名称','示例采购公司'],['购买方统一社会信用代码/纳税人识别号','—'],['开票人','—'],['开票日期','2026-11-18'],
+ ['认证状态','待认证'],['认证日期','—'],['做账状态','未生成'],['勾选认证时间','—'],
+ ['PDF文件','—'],['OFD文件','—'],['XML文件','—'],['发票链接','—'],['备注','—'],
+ ['金蝶采集状态',invoice.synced?'已采集':'待采集'],['台账建档来源',invoice.origin],['红冲原因',(invoice.redForms||[]).map(form=>form.reason).join('；')||'—']
+ ];
+ open('进项发票详情',(a.excess?'<div style="padding:14px;background:#fff2f0;border:1px solid #ffccc7;color:#b83c32">登记超额 '+money(a.excess)+' ｜ 票面含税金额 '+money(invoice.total)+' ｜ 累计有效登记 '+money(a.matched+a.pending)+'。请在关联登记明细中核对。</div>':'')+'<div class="invoice-grid">'+fields.map(([name,value])=>'<div><small>'+name+'</small>'+value+'</div>').join('')+'</div><div class="tabbar"><button id="goods-tab">商品明细</button><button id="register-tab">关联进项登记单详情</button><button id="orders-tab">关联订单详情</button></div><div id="invoice-tab-content"></div>');
+ const tab=$('#invoice-tab-content');
+ $('#goods-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>商品名称</th><th>规格型号</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th><th>税率</th><th>税额</th></tr><tr><td>设备及配件（示例）</td><td>—</td><td>件</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></table>';};
+ $('#register-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>单据编号</th><th>供应商</th><th>业务员</th><th>发票状态</th><th>总金额</th><th>登记人</th><th>登记时间</th></tr>'+[...new Set(invoice.lines.map(line=>line.id))].map(id=>{
+ const lines=invoice.lines.filter(line=>line.id===id);
+ return '<tr><td><button class="link" data-line="'+id+'" data-invoice="'+invoice.number+'">'+id+'</button></td><td>'+invoice.seller+'</td><td>—</td><td>'+lines[0].state+'</td><td>'+money(lines.reduce((sum,line)=>sum+line.amount,0))+'</td><td>张石磊（示例）</td><td>2026-11-18 09:30</td></tr>';
+ }).join('')+'</table>';};
+ $('#orders-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>采购订单号</th><th>订单明细编号</th></tr>'+[...new Set(invoice.lines.map(line=>line.order))].map(order=>'<tr><td><button class="link" data-order="'+order+'" data-invoice="'+invoice.number+'">'+order.split(' / ')[0]+'</button></td><td>'+order.split(' / ')[1]+'</td></tr>').join('')+'</table>';};
+
+ if(a.excess)$('#register-tab').onclick();else $('#goods-tab').onclick();
+}
+function ledgerHistory(invoice){
+ const a=amounts(invoice);
+ const current=invoice.synced?(a.excess?'<span class="warning">登记超额 '+money(a.excess)+'</span>':'<span class="status-success">未超额</span>'):'待采集，暂无法判断超额';
+ const total=a.matched+a.pending;
+ const ids=[...new Set(invoice.lines.map(line=>line.id))];
+ const first=ids[0]||'—';
+ const logs=[
+ {time:'2026-11-18 09:30',actor:invoice.origin==='手工登记'?'张石磊':'系统',action:'台账建档',change:'建档来源：空 → '+invoice.origin+'\n发票号码：空 → '+invoice.number}
+ ];
+ if(invoice.lines.length){
+ logs.push({time:'2026-11-18 10:00',actor:'张石磊',action:'人工登记提交审核',change:'关联登记单：'+ids.join('、')+'\n新增登记关联含税金额：'+money(total)+'\n登记状态：草稿 → 审核中'});
+ logs.push({time:'2026-11-18 11:00',actor:'李敏',action:'登记审核通过',change:'关联登记单：'+first+'\n登记状态：审核中 → 待确认'});
+ }
+ if(a.matched)logs.push({time:'2026-11-18 14:00',actor:'李敏',action:'登记确认完成',change:'关联登记单：'+ids.filter(id=>invoice.lines.some(line=>line.id===id&&settled(line))).join('、')+'\n登记状态：待确认 → 完成\n已匹配金额：'+money(0)+' → '+money(a.matched)+'\n匹配状态：登记处理中 → '+(invoice.synced?status(invoice):'已匹配（人工）')});
+ if(invoice.synced)logs.push({time:'2026-11-19 09:00',actor:'系统',action:'系统采集',change:'票面含税金额：'+(invoice.origin==='手工登记'?money(invoice.total+a.excess):'空')+' → '+money(invoice.total)+'\n采集状态：待采集 → 已采集'+(a.excess?'\n登记超额：无 → 超额 '+money(a.excess):'')});
+ invoice.lines.filter(line=>['退回','报损','作废'].includes(line.state)).forEach(line=>logs.push({time:'2026-11-19 10:00',actor:'李敏',action:line.state,change:'关联登记单：'+line.id+'；订单：'+line.order+'\n登记状态：完成 → '+line.state+'\n已匹配金额：'+money(a.matched+line.amount)+' → '+money(a.matched)+'\n解除有效关联含税金额：'+money(line.amount)}));
+ if(invoice.synced){
+ logs.push({time:'2026-11-19 11:00',actor:'系统',action:'认证同步',change:'认证状态：未获取 → 待认证'});
+ logs.push({time:'2026-11-19 11:05',actor:'系统',action:'做账同步',change:'做账状态：未获取 → 未生成'});
+ }
+ logs.sort((x,y)=>y.time.localeCompare(x.time));
+ open('台账变更记录','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>开票方名称：'+invoice.seller+'</div><div>金蝶采集状态：'+(invoice.synced?'已采集':'待采集')+'</div><div>票面含税金额：'+(invoice.synced?money(invoice.total):'待采集')+'</div><div>累计有效登记金额：'+money(a.matched+a.pending)+'</div><div>登记超额情况：'+current+'</div></div><div class="fields" style="grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #e3eaf2;padding-top:18px"><label>开始日期<input type="date" id="log-start"></label><label>结束日期<input type="date" id="log-end"></label><label>操作人<input id="log-actor" placeholder="输入姓名或系统"></label><label>操作类型<select id="log-action"><option value="">全部操作</option>'+[...new Set(logs.map(log=>log.action))].map(action=>'<option>'+action+'</option>').join('')+'</select></label><label>变更字段 / 内容<input id="log-keyword" placeholder="如已匹配金额、认证状态"></label><div style="align-self:end"><button id="log-reset">重置</button></div></div><div id="history-content"></div><p class="subtle">日志为格式演示，实际应按真实操作逐次保存；顶部金额与当前台账同步。</p>');
+ function renderLogs(){
+ const shown=logs.filter(log=>{
+ const date=log.time.slice(0,10);
+ return (!$('#log-start').value||date>=$('#log-start').value)&&(!$('#log-end').value||date<=$('#log-end').value)&&
+ (!$('#log-actor').value||log.actor.includes($('#log-actor').value.trim()))&&
+ (!$('#log-action').value||log.action===$('#log-action').value)&&
+ (!$('#log-keyword').value||log.change.includes($('#log-keyword').value.trim()));
+ });
+ function links(change){
+ return change.replace(/JXDJ-\d+/g,code=>'<button class="link" data-line="'+code+'" data-invoice="'+invoice.number+'">'+code+'</button>')
+ .replace(/PO-\d+(?: \/ \d+)?/g,code=>{
+ const line=invoice.lines.find(item=>item.order===code||item.order.split(' / ')[0]===code);
+ return line?'<button class="link" data-order="'+line.order+'" data-invoice="'+invoice.number+'">'+code+'</button>':code;
+ });
+ }
+ $('#history-content').innerHTML='<table class="small-table"><tr><th>时间</th><th>操作人</th><th>操作</th><th>变更摘要</th></tr>'+shown.map(log=>'<tr><td>'+log.time+'</td><td>'+log.actor+'</td><td>'+log.action+'</td><td style="white-space:pre-line;min-width:420px;line-height:1.9">'+links(log.change)+'</td></tr>').join('')+'</table><p class="subtle">'+(shown.length?'共 '+shown.length+' 条记录':'没有符合条件的变更记录')+'</p>';
+ }
+ for(const id of ['log-start','log-end','log-actor','log-action','log-keyword'])$('#'+id).addEventListener('input',renderLogs);
+ $('#log-reset').onclick=()=>{for(const id of ['log-start','log-end','log-actor','log-action','log-keyword'])$('#'+id).value='';renderLogs();};
+ renderLogs();
+}
+
+function linkedClick(event){
+ const data=event.target.dataset;
+ if(data.invoiceDetail)invoiceDetail(invoices.find(i=>i.number===data.invoiceDetail));
+ if(data.ledgerHistory)ledgerHistory(invoices.find(i=>i.number===data.ledgerHistory));
+ if(data.match){
+ const invoice=invoices.find(i=>i.number===data.match);
+ register();$('#title').textContent='手动匹配 · 进项发票登记';
+ $('#number').value=invoice.number;$('#number').readOnly=true;$('#seller').value=invoice.seller;
+ }
+ if(data.other){
+ const invoice=invoices.find(i=>i.number===data.other);
+ open('标记为其他系统匹配','<p>请确认该发票已在其他系统完成业务匹配。标记后，当前系统不能继续关联登记和订单。</p>',[{label:'确认标记',primary:true,action:()=>{
+ const amount=amounts(invoice);
+ if(amount.matched||amount.pending){$('#message').textContent='发票已有登记，无法标记为其他系统匹配。';return;}
+ invoice.otherSystem=true;render();close();
+ }}]);
+ }
+ if(data.excess)invoiceDetail(invoices.find(i=>i.number===data.excess));
+ if(data.red)redDetail(invoices.find(i=>i.number===data.red));
+ if(data.order)orderDetail(invoices.find(i=>i.number===data.invoice),data.order);
+ if(data.line)registrationDetail(invoices.find(i=>i.number===data.invoice),data.line);
+ if(data.info)invoiceDetail(invoices.find(i=>i.number===data.info));
+}
+
+$('#ledger').onclick=linkedClick;
+$('#content').onclick=linkedClick;
+$('#register').onclick=$('#nav-register').onclick=()=>register();
+$('#batch').onclick=$('#nav-batch').onclick=()=>register(true);
+$('#sync').onclick=()=>{
+ const pending=invoices.filter(i=>!i.synced);
+ if(!pending.length){open('金蝶拉取','<p>当前示例已全部采集，不重复生成登记单。</p>');return;}
+ open('金蝶拉取演示','<div class="fields"><label>待采集发票<select id="sync-number">'+pending.map(i=>'<option>'+i.number+'</option>').join('')+'</select></label><label>金蝶票面含税金额<input id="sync-total" type="number" min="0.01" step="0.01" value="900"></label></div>',[{label:'完成采集',primary:true,action:()=>{
+ const amount=Number($('#sync-total').value);if(!Number.isFinite(amount)||amount<=0){$('#message').textContent='请填写正确金额';return;}
+ const invoice=invoices.find(i=>i.number===$('#sync-number').value);invoice.total=amount;invoice.synced=true;render();detail(invoice);
+ }}]);
+};
+
+$('#column-settings').onclick=()=>{
+ open('列表列设置','<p class="subtle">勾选需要展示的字段，发票号码固定在左侧。</p><div class="fields">'+columns.map((column,index)=>'<label style="display:block"><input type="checkbox" data-column-index="'+index+'" '+(visibleColumns.has(column.id)?'checked':'')+' '+(column.id===0?'disabled':'')+'> '+column.label+'</label>').join('')+'</div>',[
+ {label:'恢复默认',action:()=>{visibleColumns=new Set(defaultColumns);render();close();}},
+ {label:'应用',primary:true,action:()=>{
+ const selected=[...document.querySelectorAll('[data-column-index]:checked')].map(input=>columns[Number(input.dataset.columnIndex)].id);
+ visibleColumns=new Set([0,...selected]);render();close();
+ }}
+ ]);
+};
+
+
+
+for(const [id,title] of [['import','批量导入'],['auth-refresh','认证状态刷新'],['batch-other','批量标记为其他系统匹配'],['push','推送浪潮做账']]){
+ $('#'+id).onclick=()=>open(title,'<p>原采集页面操作入口已保留，处理规则沿用原 PC 及对应需求。</p><p class="subtle">当前为交互原型，此入口尚未接入真实处理。</p>');
+}
+$('#filter-toggle').onclick=()=>{$('#filter-panel').hidden=!$('#filter-panel').hidden;};
+$('#apply-filters').onclick=render;
+$('#reset-filters').onclick=()=>{
+ document.querySelectorAll('#filter-panel input, #filter-panel select').forEach(field=>field.value='');
+ $('#search').value='';$('#purchase').checked=true;$('#expense').checked=false;render();
+};
+for(const selector of ['#search','#purchase','#expense'])$(selector).addEventListener('input',render);
+
+render();
+</script></html>
