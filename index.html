@@ -56,13 +56,49 @@ button:disabled{cursor:not-allowed;color:#a8b1bc!important}.row-menu>div{min-wid
 .invoice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:18px 0}.invoice-grid div{white-space:normal;line-height:1.7}.invoice-grid small{display:block;color:#718096}
 .tabbar{display:flex;gap:18px;border-bottom:1px solid #dde5ef;padding:14px 0}.tabbar button{border:0;background:transparent;color:#2383e5}
 </style>
+
+<style id="pc-style">
+body{font:12px "Microsoft YaHei",Arial,sans-serif;color:#3f4b58;background:#eef1f5}
+header{padding:7px 12px 0;gap:4px;background:#e4e8ee}
+header span{padding:9px 15px;border-radius:3px 3px 0 0;font-size:12px}
+main{margin:0 10px 12px}.version{padding:5px 12px;font-size:11px}
+.toolbar{gap:7px;padding:10px 12px}.toolbar h1{font-size:14px}
+button,input,select{font-size:12px;padding:5px 9px;border-radius:2px}
+.toolbar .search{width:190px}.toolbar select{max-width:155px}
+#ledger th,#ledger td{padding:8px 10px;font-size:12px;border-color:#e0e5ec}
+#ledger th{background:#f3f5f8;color:#617083;font-weight:600}
+#ledger .number{min-width:185px}.line-state{font-weight:600}
+#ledger tbody:hover .invoice,#ledger tr:hover td{background:#edf5ff}
+dialog{width:69vw;max-width:96vw;padding:0 18px 18px;border-top:2px solid #3294e9;overflow-y:auto}
+dialog.maximized{width:96vw}
+dialog::backdrop{background:#34445430}
+#title{position:sticky;top:0;z-index:15;margin:0 -18px 0;padding:12px 94px 12px 18px;min-height:43px;font-size:14px;font-weight:600;background:white;border-bottom:1px solid #e4e9ef}
+.drawer-close{position:fixed;right:14px;top:10px;font-size:23px;z-index:30;padding:0 4px;background:white}
+.drawer-expand{position:fixed;right:48px;top:12px;z-index:30;border:0;background:white;color:#6a7b89;font-size:17px;padding:0 4px}
+#content{padding-top:10px}
+#content .invoice-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 20px;padding:10px 2px 17px;font-size:12px}
+#content .invoice-grid small{display:inline;color:#71808f;font-size:12px;margin-right:6px}
+#content .fields{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 20px;padding:10px 2px;font-size:12px}
+#content p{font-size:12px;line-height:1.8}
+#content h3{font-size:12px;font-weight:500;color:#2587d8;border-bottom:1px solid #e1e7ee;padding:10px 0;margin:10px 0 0}
+#content .small-table{margin-top:0;font-size:12px}
+#content .small-table th,#content .small-table td{padding:8px 9px;white-space:nowrap;font-size:12px;border-color:#e1e6ed}
+#content .small-table th{background:#f3f5f8;color:#667487;font-weight:600}
+.tabbar{gap:20px;padding:8px 0;margin-top:8px}
+.tabbar button{padding:5px 2px;font-size:12px;border-radius:0}
+.tabbar button:focus{outline:none;border-bottom:2px solid #3294e9}
+#actions:empty{display:none}#actions{bottom:-18px;padding:10px 0}
+#message:empty{display:none}.row-menu summary{font-size:21px}.row-menu>div{min-width:190px}.row-menu button{font-size:12px}
+#history-content td{vertical-align:top}.subtle{font-size:11px}
+@media(max-width:1100px){dialog{width:88vw}#content .invoice-grid,#content .fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 <header><span>首页</span><span id="nav-register">进项发票登记</span><span id="nav-batch">进项发票批量登记</span><span class="active">进项发票台账</span></header>
-<div class="version">2026-11-19 订单金额更新版 · 采购订单号后展示订单关联含税金额</div><main><div class="toolbar"><h1>进项发票台账</h1><button class="primary" id="sync">立即拉取</button><button id="import">批量导入</button><button id="auth-refresh">认证状态刷新</button><button id="batch-other">批量标记为其他系统匹配</button><button id="push">推送浪潮做账</button><button id="register">登记</button><button id="batch">批量登记</button>
+<div class="version">PC风格原型 · 2026-11-19</div><main><div class="toolbar"><h1>进项发票台账</h1><button class="primary" id="sync">立即拉取</button><button id="import">批量导入</button><button id="auth-refresh">认证状态刷新</button><button id="batch-other">批量标记为其他系统匹配</button><button id="push">推送浪潮做账</button><button id="register">登记</button><button id="batch">批量登记</button>
 <input id="search" class="search" placeholder="发票号码" aria-label="搜索">
 <label><input type="checkbox" id="purchase" checked> 采购发票</label><label><input type="checkbox" id="expense"> 费用发票</label><button id="filter-toggle">筛选</button><button id="reset-filters">重置</button><button id="column-settings">列设置</button></div>
 <div id="filter-panel" hidden style="padding:16px;border-top:1px solid #e6ebf2"><div class="fields" style="grid-template-columns:repeat(3,minmax(220px,1fr))"><label>开票方名称<input id="seller-filter"></label><label>开票方统一社会信用代码<input id="seller-tax-filter"></label><label>开票人<input id="issuer-filter"></label><label>开票日期<span><input id="invoice-date-start" type="date" aria-label="开票日期开始"> 至 <input id="invoice-date-end" type="date" aria-label="开票日期结束"></span></label><label>购买方名称<input id="buyer-filter"></label><label>购买方统一社会信用代码<input id="buyer-tax-filter"></label><label>匹配状态<select id="state"><option value="">全部</option><option>未匹配</option><option>已匹配-全额（系统）</option><option>待人工匹配</option><option>已匹配-全额（人工）</option><option>已匹配-部分（人工）</option><option>已匹配-全额（其他系统）</option></select></label><label>来源<select id="origin-filter"><option value="">全部</option><option>自动拉取</option><option>手动拉取</option><option>导入</option></select></label><label>认证状态<select id="auth-filter"><option value="">全部</option><option>待认证</option><option>已认证</option><option>无需认证</option></select></label><label>认证日期<span><input id="tax-date-start" type="month" aria-label="认证日期开始"> 至 <input id="tax-date-end" type="month" aria-label="认证日期结束"></span></label><label>做账状态<select id="account-filter"><option value="">全部</option><option>未生成</option><option>待推送</option><option>已推送</option><option>推送失败</option></select></label><label>勾选认证时间<span><input id="confirm-date-start" type="date" aria-label="勾选认证时间开始"> 至 <input id="confirm-date-end" type="date" aria-label="勾选认证时间结束"></span></label><label>采购订单号<input id="order-filter"></label><label>金蝶采集状态<select id="collection-filter"><option value="">全部</option><option>待采集</option><option>已采集</option></select></label><label>登记超额<select id="excess-filter"><option value="">全部</option><option>超额</option><option>未超额</option></select></label><label>红冲原因<input id="red-filter" placeholder="输入原因关键词"></label></div><div class="actions"><button class="primary" id="apply-filters">查询</button></div></div><div class="scroll"><table id="ledger"><thead><tr id="column-headers"></tr></thead></table></div>
 <footer id="count"></footer></main>
-<dialog id="dialog"><button id="drawer-close" aria-label="关闭抽屉" class="drawer-close">×</button><h2 id="title"></h2><div id="content"></div><div class="notice" id="message" role="status"></div><div class="actions" id="actions"></div></dialog>
+<dialog id="dialog"><button id="drawer-expand" class="drawer-expand" aria-label="展开抽屉" title="展开 / 还原">⛶</button><button id="drawer-close" aria-label="关闭抽屉" class="drawer-close">×</button><h2 id="title"></h2><div id="content"></div><div class="notice" id="message" role="status"></div><div class="actions" id="actions"></div></dialog>
 <script>
 const money=v=>new Intl.NumberFormat('zh-CN',{style:'currency',currency:'CNY'}).format(v);
 const effective=['审核中','待确认','完成','抵扣'];
@@ -172,6 +208,7 @@ function render(){
 }
 function close(){ $('#dialog').close(); }
 $('#drawer-close').onclick=close;
+$('#drawer-expand').onclick=()=>$('#dialog').classList.toggle('maximized');
 function open(title,content,buttons=[]){
  $('#title').textContent=title;$('#content').innerHTML=content;$('#message').textContent='';$('#actions').innerHTML='';
  for(const item of buttons){
@@ -292,15 +329,9 @@ function ledgerHistory(invoice){
  logs.push({time:'2026-11-19 11:05',actor:'系统',action:'做账同步',change:'做账状态：未获取 → 未生成'});
  }
  logs.sort((x,y)=>y.time.localeCompare(x.time));
- open('台账变更记录','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>开票方名称：'+invoice.seller+'</div><div>金蝶采集状态：'+(invoice.synced?'已采集':'待采集')+'</div><div>票面含税金额：'+(invoice.synced?money(invoice.total):'待采集')+'</div><div>累计有效登记金额：'+money(a.matched+a.pending)+'</div><div>登记超额情况：'+current+'</div></div><div class="fields" style="grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #e3eaf2;padding-top:18px"><label>开始日期<input type="date" id="log-start"></label><label>结束日期<input type="date" id="log-end"></label><label>操作人<input id="log-actor" placeholder="输入姓名或系统"></label><label>操作类型<select id="log-action"><option value="">全部操作</option>'+[...new Set(logs.map(log=>log.action))].map(action=>'<option>'+action+'</option>').join('')+'</select></label><label>变更字段 / 内容<input id="log-keyword" placeholder="如已匹配金额、认证状态"></label><div style="align-self:end"><button id="log-reset">重置</button></div></div><div id="history-content"></div><p class="subtle">日志为格式演示，实际应按真实操作逐次保存；顶部金额与当前台账同步。</p>');
+ open('台账变更记录','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>开票方名称：'+invoice.seller+'</div><div>金蝶采集状态：'+(invoice.synced?'已采集':'待采集')+'</div><div>票面含税金额：'+(invoice.synced?money(invoice.total):'待采集')+'</div><div>已匹配金额：'+money(a.matched)+'</div><div>处理中金额：'+money(a.pending)+'</div><div>累计有效登记金额：'+money(a.matched+a.pending)+'</div><div>登记超额情况：'+current+'</div></div><div id="history-content"></div><p class="subtle">日志为格式演示，实际应按真实操作逐次保存；顶部金额与当前台账同步。</p>');
  function renderLogs(){
- const shown=logs.filter(log=>{
- const date=log.time.slice(0,10);
- return (!$('#log-start').value||date>=$('#log-start').value)&&(!$('#log-end').value||date<=$('#log-end').value)&&
- (!$('#log-actor').value||log.actor.includes($('#log-actor').value.trim()))&&
- (!$('#log-action').value||log.action===$('#log-action').value)&&
- (!$('#log-keyword').value||log.change.includes($('#log-keyword').value.trim()));
- });
+ const shown=logs;
  function links(change){
  return change.replace(/JXDJ-\d+/g,code=>'<button class="link" data-line="'+code+'" data-invoice="'+invoice.number+'">'+code+'</button>')
  .replace(/PO-\d+(?: \/ \d+)?/g,code=>{
@@ -310,8 +341,6 @@ function ledgerHistory(invoice){
  }
  $('#history-content').innerHTML='<table class="small-table"><tr><th>时间</th><th>操作人</th><th>操作</th><th>变更摘要</th></tr>'+shown.map(log=>'<tr><td>'+log.time+'</td><td>'+log.actor+'</td><td>'+log.action+'</td><td style="white-space:pre-line;min-width:420px;line-height:1.9">'+links(log.change)+'</td></tr>').join('')+'</table><p class="subtle">'+(shown.length?'共 '+shown.length+' 条记录':'没有符合条件的变更记录')+'</p>';
  }
- for(const id of ['log-start','log-end','log-actor','log-action','log-keyword'])$('#'+id).addEventListener('input',renderLogs);
- $('#log-reset').onclick=()=>{for(const id of ['log-start','log-end','log-actor','log-action','log-keyword'])$('#'+id).value='';renderLogs();};
  renderLogs();
 }
 
