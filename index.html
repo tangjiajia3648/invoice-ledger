@@ -92,14 +92,135 @@ dialog::backdrop{background:#34445430}
 #history-content td{vertical-align:top}.subtle{font-size:11px}
 @media(max-width:1100px){dialog{width:88vw}#content .invoice-grid,#content .fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
-<header><span>首页</span><span id="nav-register">进项发票登记</span><span id="nav-batch">进项发票批量登记</span><span class="active">进项发票台账</span></header>
-<div class="version">PC风格原型 · 2026-11-19</div><main><div class="toolbar"><h1>进项发票台账</h1><button class="primary" id="sync">立即拉取</button><button id="import">批量导入</button><button id="auth-refresh">认证状态刷新</button><button id="batch-other">批量标记为其他系统匹配</button><button id="push">推送浪潮做账</button><button id="register">登记</button><button id="batch">批量登记</button>
+<style id="invoice-registration-style">
+.reg-intro{padding:8px 0 14px;color:#748293}.reg-base,.reg-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px}.reg-base{padding:0 0 18px;border-bottom:1px solid #e2e7ee}.reg-base label,.reg-form label{display:grid;gap:7px;color:#647489}.reg-base input,.reg-base select,.reg-form input{width:100%;min-width:0;color:#3f4b58}.reg-wide{grid-column:span 2}.reg-base b,.reg-form b{color:#e45c53;display:contents}.reg-section-title{font-weight:600;margin:18px 0 12px}.reg-section-title span{margin-left:12px;font-weight:400;color:#8491a1}.reg-card{border:1px solid #dce4ed;margin-bottom:16px;background:white}.reg-card-head{display:flex;align-items:center;gap:14px;padding:11px 14px;background:#f5f8fc;border-bottom:1px solid #e3e9f0}.reg-card-head strong{color:#2c81cb}.reg-card-head span{flex:1;color:#788697}.reg-upload{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px}.reg-upload span{color:#8491a1;max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.reg-note{margin:0 16px 12px;padding:8px 10px;background:#edf6ff;color:#4b7b9e}.reg-form{padding:0 16px 14px}.reg-more{margin:0 16px 12px;color:#7b8998}.reg-more summary{cursor:pointer;padding:4px 0 10px}.reg-more .reg-form{padding:6px 0}.reg-order-title{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #edf0f4;padding:12px 16px}.reg-order-title strong{font-weight:500}.reg-table-wrap{padding:0 16px;overflow:auto}.reg-table-wrap input{width:120px;text-align:right}.reg-empty{margin:0 16px 14px;padding:22px;text-align:center;background:#fafbfd;border:1px dashed #dce4ed;color:#8a96a4}.reg-card-foot{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;background:#fafbfd}.reg-card-foot span{color:#8894a2}.reg-card-foot em{font-style:normal;color:#2587d8;font-size:15px}.reg-add{width:100%;padding:12px;border:1px dashed #9fc5ed;color:#2587d8;background:#fafcff}.reg-total{text-align:right;padding:18px 0;font-weight:600}#reg-picker{position:fixed;inset:15% 8% 15% 28%;background:white;z-index:50;padding:20px;border:1px solid #a9bfd5;box-shadow:0 0 0 100vmax #24374c55;overflow:auto}.reg-picker-title{display:flex;justify-content:space-between}.reg-picker-title strong{font-size:14px}@media(max-width:1000px){.reg-base,.reg-form{grid-template-columns:repeat(2,minmax(0,1fr))}#reg-picker{inset:12% 5%}}
+</style>
+<style>.reg-hero{display:flex;align-items:center;gap:18px;padding:18px;background:#f1f7ff;border:1px dashed #a7c9ef;margin:4px 0 16px}.reg-hero>div{flex:1}.reg-hero strong{font-size:16px;color:#2a70ad}.reg-hero p{margin:7px 0 0;color:#7b8ea2}.reg-hero .primary{padding:10px 22px}.reg-intro{display:none}.reg-supplier-result{display:flex;gap:16px;align-items:end;margin-bottom:18px}.reg-supplier-result label{display:grid;gap:7px;width:360px;color:#637b92}.reg-supplier-result span{color:#8b97a6;padding-bottom:7px}.reg-supplier-result b{color:#df6255}.reg-other{margin:12px 0 22px;color:#6e7c8c}.reg-other summary{padding:10px 0;cursor:pointer}.reg-other .reg-base{padding:12px 0}.registration-tabs{display:flex;gap:16px;align-items:center;margin:0 12px}.registration-tabs label{white-space:nowrap}.registration-current{border-top:1px solid #d9e2ed;margin-top:24px;padding:10px;color:#768595}#registration-list{min-width:1560px}#registration-list tr:hover td{background:#edf5ff}[hidden]{display:none!important}</style>
+
+
+
+
+
+
+<style id="invoice-manage-tab-style">.invoice-manage-tabs{display:flex;gap:26px;padding:0 18px;margin:0 10px;background:white;border-bottom:1px solid #dce3ed;overflow-x:auto}.invoice-manage-tabs button{padding:14px 2px 12px;border:0;border-bottom:2px solid transparent;border-radius:0;background:white;color:#697d8f;white-space:nowrap}.invoice-manage-tabs button.active{color:#2587d8;border-bottom-color:#2587d8}.invoice-manage-tabs button:hover{color:#2587d8}.preserved-page{padding:24px;min-height:220px}.preserved-page p{color:#8b99a6;line-height:1.8}</style>
+<style>.pending-collection{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:3px;border:1px solid #f3cb88;background:#fff5e5;color:#ad6b16;font-size:11px;font-weight:500;cursor:help;vertical-align:middle}.pending-collection:focus{outline:2px solid #e7b35f;outline-offset:2px}</style>
+
+
+<style id="ledger-tooltip-style">#invoice-tooltip{position:fixed;z-index:2147483647;width:max-content;max-width:min(340px,calc(100vw - 24px));padding:11px 14px;border:1px solid #d9e2ec;border-radius:5px;background:#fff;color:#405165;box-shadow:0 5px 22px #253d5930;font:12px/1.8 "Microsoft YaHei",sans-serif;white-space:normal;overflow-wrap:anywhere;pointer-events:none;text-align:left}</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style id="single-invoice-registration">
+.single-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 0 12px}.single-heading strong{font-size:14px;color:#354e64}.single-heading span{margin-left:12px;color:#8997a6}.single-heading button{color:#2587d8;border-color:#b6d5ef}.single-file{display:flex;align-items:center;gap:14px;padding-bottom:18px;color:#8996a5}.single-form{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;padding:0 0 16px}.single-form label,.single-other>label{display:flex;flex-wrap:wrap;align-content:start;gap:7px;color:#60768b}.single-form input,.single-form select{width:100%;min-width:0;font-size:13px;padding:8px 9px;color:#35495b}.single-form small{width:100%;font-size:11px;color:#8a98a7;line-height:1.6}.single-form b,.single-other b{color:#db6054}.single-wide{grid-column:span 2}.single-more{color:#7f90a1;margin:0 0 14px}.single-more summary{padding:5px 0;cursor:pointer}.single-more .single-form{margin-top:14px}.single-demo{font-size:11px;color:#92a0ad;margin:12px 0}.single-demo summary{cursor:pointer}.single-demo>div{padding:10px;background:#f6f8fb;display:flex;gap:16px;align-items:center}.single-orders-heading{border-top:1px solid #e1e7ef;margin-top:18px}.single-total{display:flex;justify-content:space-between;gap:12px;padding:16px;background:#f7fafe;border:1px solid #e1eaf3}.single-total span{color:#8c9aab}.single-total strong{font-weight:500}.single-total em{font-size:17px;font-style:normal;color:#2487db;margin-left:10px}.single-other{display:flex;gap:30px;align-items:center;padding:22px 0;color:#7c8da0}.single-other select{min-width:160px}.single-other summary{cursor:pointer}.single-other details input{margin-top:12px}#reg-recognition-note{margin:10px 0}#reg-orders .reg-table-wrap{padding:0}#reg-orders .reg-empty{margin:0 0 14px}#reg-picker .actions{position:static}@media(max-width:700px){.single-heading{align-items:start;flex-direction:column}.single-form{grid-template-columns:1fr}.single-wide{grid-column:auto}.single-heading span{display:block;margin:6px 0 0}.single-total{flex-direction:column}}
+#reg-picker{inset:7vh 5vw;width:90vw;height:86vh;display:flex;flex-direction:column;padding:18px;background:white}.pc-picker-tabs{display:flex;gap:16px;margin-top:16px;border-bottom:1px solid #dfe6ee}.pc-picker-tabs button{border:0;border-radius:0;padding:10px 8px;color:#758699}.pc-picker-tabs button.active{color:#2587d8;border-bottom:2px solid #2587d8}.pc-picker-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:10px 0 16px}.pc-picker-filters label{display:grid;gap:6px;color:#728397}.pc-picker-filters input,.pc-picker-filters select{width:100%;min-width:0}.pc-picker-scroll{overflow:auto}.pc-picker-scroll table{min-width:1000px}#reg-choose-panel,#reg-selected-panel{flex:1;min-height:0;overflow:auto}.pc-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #dde5ef;padding-top:12px;margin-top:12px}.pc-picker-footer .actions{padding:0;border:0}.pc-selected-order{border:1px solid #dfe6ee;padding:14px;margin:12px 0}.pc-order-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;color:#64768a;margin-bottom:16px}.pc-order-amount{display:flex;gap:12px;align-items:center;margin:12px 0}.pc-order-amount input{width:150px}.pc-selected-order table{min-width:1450px}.pc-selected-order table input[type=number]{width:100px}.pc-selected-order table input[data-product-rate]{width:65px}#reg-picker-error{padding:8px 0}
+#reg-orders .reg-order-empty{border:1px solid #e1e6ed;min-height:130px}#reg-orders .reg-order-empty table{margin:0!important;border:0}#reg-orders .reg-order-empty th{border-top:0;border-left:0}#reg-orders .reg-order-empty th:last-child{border-right:0}.single-apportion{display:flex;align-items:center;gap:18px;padding:15px 10px;border:1px solid #e1eaf3;border-top:0}.single-apportion label{color:#63768a}.single-apportion label b{color:#df6255}.single-apportion button{text-align:left;line-height:1.8}#reg-apportion{position:fixed;inset:22vh 20vw auto;z-index:55;background:white;border:1px solid #a9bfd5;box-shadow:0 0 0 100vmax #24374c55;padding:18px;max-height:60vh;overflow:auto}#reg-apportion .small-table{margin-top:16px}#reg-apportion input[type=number]{width:150px}#reg-apportion .actions{position:static}.single-total b{font-weight:400}@media(max-width:900px){#reg-apportion{inset:15vh 5vw auto}}
+.pc-order-remark{grid-column:1/-1;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;padding-top:8px;border-top:1px solid #eef1f5}
+.reg-order-details table{min-width:1150px!important}.reg-order-details td[rowspan]{vertical-align:middle}.reg-order-details th,.reg-order-details td{font-variant-numeric:tabular-nums}
+.single-file{flex-wrap:wrap;gap:12px;padding:8px 0 20px}.single-file>label{color:#61758a;margin-right:8px}.single-file #reg-file-name{max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.single-file button{white-space:nowrap}.single-file #reg-upload-first{border-color:#b6d5ef;color:#2587d8}
+.single-form.registration-basic-fields{grid-template-columns:2fr 1fr 1fr;gap:16px;border-bottom:1px solid #e3e9ef;padding-bottom:20px}.registration-basic-fields select{width:100%}.excess-tag{cursor:help}.excess-tag:focus{outline:2px solid #e99991;outline-offset:2px}@media(max-width:1000px){.single-form.registration-basic-fields{grid-template-columns:1fr 1fr}.registration-basic-fields .basic-supplier{grid-column:span 2}}@media(max-width:700px){.single-form.registration-basic-fields{grid-template-columns:1fr}.registration-basic-fields .basic-supplier{grid-column:auto}}
+.legacy-registration>.single-file{margin:12px 0 4px;padding:14px 12px;background:#f7faff;border:1px solid #dfe8f2}.legacy-invoice-scroll{overflow:auto;border:1px solid #e1e6ed}.legacy-invoice-table{min-width:2100px!important;margin:0!important}.legacy-invoice-table th,.legacy-invoice-table td{vertical-align:top}.legacy-invoice-table input,.legacy-invoice-table select{width:140px;min-width:120px}.legacy-invoice-table #reg-supplier{width:220px}.legacy-invoice-table #reg-number{width:190px}.legacy-invoice-table #reg-remark{width:180px}.legacy-invoice-table small{display:block;white-space:normal;line-height:1.7;max-width:220px}.legacy-invoice-table #legacy-file-name{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis}.legacy-invoice-table #legacy-apportion{white-space:normal;min-width:140px;text-align:left;line-height:1.7}.legacy-registration-info{padding:18px 0;margin:0;max-width:680px}.legacy-registration-info select{width:100%}
+.legacy-registration>.registration-basic-fields{margin-top:18px}.legacy-registration .legacy-invoice-table{min-width:1880px!important}
+.multi-remark{display:grid;gap:8px;color:#60768b;margin:14px 0}.multi-remark input{width:100%}.multi-list-title{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px}.multi-list{min-width:650px!important;margin:0!important}.multi-list th,.multi-list td{padding:10px!important}.multi-selected{background:#edf6ff}.multi-list-total{text-align:right;padding:12px;background:#f7faff;color:#60768b}.multi-list-total strong{color:#2587d8;font-size:16px}.multi-current{border-left:3px solid #3598eb;padding:10px 12px;margin:22px 0 10px;background:#f4f8fc;color:#35536d}#multi-invoice-list{overflow:auto}
+.single-file,.legacy-registration>.single-file{padding:0 0 18px;margin:0;background:transparent;border:0;align-items:center;gap:10px}.single-file>label{flex:0 0 100%;color:#60768b;margin:0 0 2px}.single-file #reg-file-name{max-width:65%;font-size:12px}.single-form.registration-basic-fields{border-bottom:0;padding-bottom:0}.single-other.registration-attachments{display:block;padding:0 0 20px;margin:0 0 4px;border-bottom:1px solid #e3e9ef}.registration-attachments>label{display:flex;flex-direction:column;align-items:flex-start;gap:10px;color:#60768b}.attachment-controls{display:flex;align-items:center;gap:12px;max-width:100%}.attachment-controls button{color:#2587d8;border-color:#b6d5ef;white-space:nowrap}#reg-attachments-name{color:#8996a5;overflow-wrap:anywhere;font-size:12px}#reg-attachments[hidden]{display:none!important}
+.legacy-order-controls[hidden]{display:none!important}.legacy-registration .registration-basic-fields{grid-template-columns:2fr 1fr 1fr 1fr;align-items:start}.legacy-registration .legacy-invoice-table{min-width:1900px!important}.legacy-invoice-table th{white-space:normal;max-width:185px}.legacy-registration .single-heading{padding-top:18px}.legacy-registration .single-file{padding:12px;border:1px solid #dfe8f2;border-radius:4px;background:#f8fbff}.legacy-registration .single-file>label{flex:0 0 auto;margin-right:8px}#reg-red-flush{width:auto!important;min-width:0!important}@media(max-width:900px){.legacy-registration .registration-basic-fields{grid-template-columns:1fr 1fr}.legacy-registration .basic-supplier{grid-column:span 2}}
+</style>
+<style id="registration-image-visual">/* 登记两方案视觉层；不改变字段、金额或保存规则。 */
+dialog.registration-visual[open]{display:flex;flex-direction:column;width:69vw;max-width:96vw;height:100dvh;max-height:100dvh;inset:0 0 0 auto;margin:0;padding:0;border:1px solid #b8cde4;border-top:3px solid #2d88df;border-radius:0;overflow:hidden;background:#fff;box-shadow:-6px 0 26px #21374b26}
+dialog.registration-visual.maximized[open]{inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}
+.registration-visual #title{position:relative;flex:none;margin:0;min-height:53px;padding:16px 96px 14px 22px;background:linear-gradient(90deg,#e4effc,#f5f9fe);border-bottom:1px solid #cbdcec;font-size:17px;color:#173b60;line-height:1.3}
+.registration-visual .drawer-close,.registration-visual .drawer-expand{position:absolute;top:15px;background:transparent;border-radius:4px;color:#526b84}
+.registration-visual .drawer-close{right:17px}.registration-visual .drawer-expand{right:51px}
+.registration-visual #content{flex:1;min-height:0;overflow:auto;padding:20px 24px 24px;scrollbar-gutter:stable;scroll-behavior:smooth}
+.registration-visual #message{flex:none;padding:8px 24px;margin:0;background:#fff5ef;border-top:1px solid #f4dbcc;color:#b64d25;font-size:12px;max-height:72px;overflow:auto}
+.registration-visual #message:empty{display:none}
+.registration-visual #actions{position:static;flex:none;margin:0;padding:13px 24px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;background:#fff;border-top:1px solid #dbe5ef;box-shadow:0 -3px 12px #1e3a5a05}
+.registration-visual #actions button{min-width:96px;min-height:34px;padding:7px 17px}
+.registration-visual button,.registration-visual input,.registration-visual select{font-size:13px;border-radius:4px;transition:border-color .15s,background-color .15s,box-shadow .15s}
+.registration-visual button{min-height:31px;border-color:#c5d4e4;padding:6px 13px}.registration-visual button:hover:not(:disabled){background:#edf5ff;border-color:#7bb4ec;color:#1671c8}
+.registration-visual button.primary,.registration-visual #reg-upload-first{background:#1683ed;border-color:#1683ed;color:white;box-shadow:0 2px 4px #1683ed15}
+.registration-visual button.primary:hover:not(:disabled),.registration-visual #reg-upload-first:hover{background:#0873d8;border-color:#0873d8;color:white}
+.registration-visual .link{padding:2px 0;border:0;background:transparent;min-height:24px;color:#1677d2}.registration-visual .link:hover:not(:disabled){border:0;background:transparent;text-decoration:underline}
+.registration-visual :is(input,select,button):focus-visible{outline:2px solid #9fcaf4;outline-offset:2px}
+.registration-visual input:not([type=checkbox]):not([type=file]),.registration-visual select{min-height:34px;border-color:#cad6e2;background:#fff;color:#33485c}.registration-visual input::placeholder{color:#99a6b3}
+.registration-visual select:disabled{color:#95a3b1;background:#f3f6f9;cursor:not-allowed}
+.registration-visual .single-heading{min-height:38px;padding:8px 12px!important;margin:20px 0 14px;border:1px solid #d8e5f2;border-radius:4px;background:linear-gradient(90deg,#e6effb,#f4f8fd);gap:12px}
+.registration-visual .single-heading strong{font-size:14px;font-weight:600;color:#26435f;border-left:3px solid #268ceb;padding-left:9px;line-height:20px}
+.registration-visual .single-heading span{color:#7e91a4;font-size:12px;margin-left:12px}
+.registration-visual .single-heading button{min-height:28px;background:white;border-color:#aaccf0;color:#1677d2;font-size:12px;padding:4px 10px}
+.registration-visual .single-file,.registration-visual .legacy-registration>.single-file{padding:14px 16px;margin:0;gap:12px;background:#f8fbff;border:1px solid #d6e3f1;border-radius:5px;flex-wrap:wrap}
+.registration-visual .single-file>label{flex:0 0 auto;margin:0 7px 0 0;font-size:13px;font-weight:600;color:#314d67}
+.registration-visual .single-file #reg-file-name{font-size:12px;max-width:40%;color:#71849a}.registration-visual .single-file #reg-file-view{margin-left:auto}
+.registration-visual .single-form{gap:15px 24px;padding:0 8px 8px;grid-template-columns:1fr 1fr}
+.registration-visual .single-form label{color:#5c7185;font-size:12px;gap:7px}.registration-visual .single-form label b{font-size:12px}
+.registration-visual .registration-basic-fields,.registration-visual .legacy-registration .registration-basic-fields{grid-template-columns:2fr 1fr 1fr;gap:15px 24px;padding:0 8px 8px;margin:0;align-items:start}
+.registration-visual .registration-basic-fields>label:has(#reg-red-flush){grid-column:1/-1;flex-direction:row;align-items:center;gap:14px}
+.registration-visual .registration-basic-fields>label:has(#reg-red-flush)>span{width:auto!important}
+.registration-visual #reg-red-flush{accent-color:#1683ed;width:15px!important;height:15px;min-width:15px!important;cursor:pointer}
+.registration-visual .single-other.registration-attachments{margin:3px 8px 0;padding:10px 0 5px;border:0}
+.registration-visual .registration-attachments>label{flex-direction:row;align-items:center;gap:18px;font-size:12px}.registration-visual .attachment-controls{gap:12px}.registration-visual .attachment-controls button{min-height:29px;font-size:12px;background:#fff}
+.registration-visual #reg-recognition-note:not([hidden]){border:1px solid #caddf3;background:#f1f7ff;padding:10px 12px;border-radius:4px;color:#41688d;margin:12px 0}
+.registration-visual .legacy-invoice-scroll{border:1px solid #d1dfed;border-radius:4px;overflow:auto}
+.registration-visual .legacy-invoice-table{min-width:1630px!important;table-layout:auto}
+.registration-visual #content .small-table th{background:#edf1f6;color:#42566d;font-size:12px;border-color:#d7e0eb;padding:10px 11px;vertical-align:middle;line-height:1.55}
+.registration-visual #content .small-table td{font-size:12px;color:#33495f;border-color:#e0e7ef;padding:10px 11px;vertical-align:middle}
+.registration-visual .small-table tbody tr:hover td{background:#f5faff}
+.registration-visual .legacy-invoice-table input,.registration-visual .legacy-invoice-table select{font-size:12px;width:120px;min-width:100px;padding:6px 8px}.registration-visual .legacy-invoice-table #reg-number{width:185px}.registration-visual .legacy-invoice-table #reg-remark{width:150px}
+.registration-visual .legacy-invoice-table td:has(#legacy-invoice-total){background:#f4f8ff;text-align:right;min-width:150px}.registration-visual #legacy-invoice-total{font-size:15px;font-weight:600;color:#1378d8;font-variant-numeric:tabular-nums;cursor:help}
+.registration-visual #legacy-order-amount{white-space:nowrap;font-weight:500}.registration-visual #legacy-apportion{min-width:130px;font-size:12px;line-height:1.8}
+.registration-visual .single-orders-heading{border-top:1px solid #d8e5f2}.registration-visual #reg-orders .reg-order-empty{min-height:86px}.registration-visual .reg-order-details table{min-width:1100px!important}
+.registration-visual .single-total{background:#edf5ff;border-color:#d7e6f5;border-radius:0 0 4px 4px;padding:13px 15px;align-items:center;flex-wrap:wrap;font-size:12px}.registration-visual .single-total em{font-size:19px;color:#0877dd;font-weight:600}
+.registration-visual .single-apportion{background:#fafcff;border-color:#d7e6f5;padding:10px 15px;font-size:12px}
+.registration-visual #reg-picker{border:1px solid #b7cee5;border-top:3px solid #2486e3;border-radius:6px;box-shadow:0 12px 40px #183c632b;padding:18px}
+.registration-visual .reg-picker-title{color:#284864;font-size:15px}.registration-visual .pc-picker-tabs button.active{color:#1677d2;background:#f4f9ff;border-bottom:2px solid #1683ed}
+.registration-visual .pc-picker-filters{background:#f7faff;margin:12px 0;padding:12px;border-radius:4px;gap:12px 18px}
+.registration-visual .pc-selected-order{border:1px solid #d6e2ee;border-radius:4px;margin:12px 0;padding:14px;background:#fff}
+.registration-visual .pc-picker-footer{padding-top:12px;border-top-color:#d8e3ef}
+@media(max-width:1000px){dialog.registration-visual[open]{width:96vw;inset:0 0 0 auto;height:100dvh;max-height:100dvh}.registration-visual #content{padding:14px 16px}.registration-visual .registration-basic-fields,.registration-visual .legacy-registration .registration-basic-fields{grid-template-columns:1fr 1fr}.registration-visual .basic-supplier{grid-column:span 2}.registration-visual .single-heading span{display:none}}
+@media(max-width:640px){dialog.registration-visual[open]{inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}.registration-visual #content{padding:12px}.registration-visual .single-form,.registration-visual .registration-basic-fields,.registration-visual .legacy-registration .registration-basic-fields{grid-template-columns:1fr}.registration-visual .single-wide,.registration-visual .basic-supplier{grid-column:auto}.registration-visual .single-file #reg-file-name{max-width:55%}.registration-visual #reg-file-view{margin-left:0}.registration-visual #actions{padding:10px 12px;gap:7px}.registration-visual #actions button{min-width:76px;font-size:12px;padding:7px 10px}.registration-visual .single-heading{margin-top:16px}.registration-visual .registration-attachments>label{align-items:flex-start;flex-direction:column;gap:8px}}
+@media(prefers-reduced-motion:reduce){.registration-visual #content{scroll-behavior:auto}.registration-visual button,.registration-visual input,.registration-visual select{transition:none}}
+.registration-visual .reg-ledger-summary{display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px;padding:10px 12px;margin:0 0 12px;color:#435c74;background:#f8fbff;border:1px solid #dde8f3;border-radius:4px;font-size:13px}
+.registration-visual .reg-ledger-summary strong{font-size:16px;color:#176fc2;margin-left:5px;font-variant-numeric:tabular-nums}.registration-visual .reg-ledger-summary>span:first-child strong{color:#304b63}
+.registration-visual .reg-money-source{display:inline-block;font-size:11px;padding:3px 7px;margin-left:7px;color:#61788e;background:#eaf0f6;border-radius:3px}
+.registration-visual .reg-money-divider{width:1px;align-self:stretch;min-height:20px;background:#cfdeec}
+.registration-visual .reg-ledger-warning{flex-basis:100%;padding-top:4px;color:#ba4933;font-size:12px;line-height:1.6}
+.registration-visual #reg-face[readonly]{background:#f0f3f7;color:#61758b;border-color:#d5dfe9;cursor:default;box-shadow:none}
+.registration-visual .reg-registration-preview{display:flex;justify-content:space-between;align-items:center;gap:12px 24px;flex-wrap:wrap;padding:13px 16px;margin-top:16px;border:1px solid #d4e5f6;background:#edf5ff;color:#466078;border-radius:4px;font-size:13px}
+.registration-visual .reg-registration-preview strong{color:#1376d6;font-size:18px;margin-left:8px;font-variant-numeric:tabular-nums}.registration-visual .reg-preview-excess{color:#be4434!important}
+@media(max-width:640px){.registration-visual .reg-money-divider{display:none}.registration-visual .reg-ledger-summary{gap:8px 12px}.registration-visual .reg-registration-preview{gap:8px}}
+</style>
+<header><span>首页</span><span class="active" id="invoice-manage-menu">进项发票管理</span></header><nav class="invoice-manage-tabs" role="tablist" aria-label="进项发票管理"><button id="nav-ledger" class="active" role="tab" aria-selected="true" aria-controls="ledger-page">进项发票台账</button><button id="nav-register" role="tab" aria-selected="false" aria-controls="registration-page">进项发票登记</button><button id="nav-batch" role="tab" aria-selected="false" aria-controls="batch-registration-page">进项发票批量登记</button><button id="nav-handle" role="tab" aria-selected="false" aria-controls="invoice-handle-page">进项发票处理</button></nav>
+<div class="version">PC风格原型 · 2026-11-25 · 票面金额与登记规则更新</div><main id="ledger-page" role="tabpanel" aria-labelledby="nav-ledger"><div class="toolbar"><h1>进项发票台账</h1><button class="primary" id="sync">立即拉取</button><button id="import">批量导入</button><button id="auth-refresh">认证状态刷新</button><button id="batch-other">批量标记为其他系统匹配</button><button id="push">推送浪潮做账</button><button id="register">登记</button><button id="batch">批量登记</button>
 <input id="search" class="search" placeholder="发票号码" aria-label="搜索">
 <label><input type="checkbox" id="purchase" checked> 采购发票</label><label><input type="checkbox" id="expense"> 费用发票</label><button id="filter-toggle">筛选</button><button id="reset-filters">重置</button><button id="column-settings">列设置</button></div>
-<div id="filter-panel" hidden style="padding:16px;border-top:1px solid #e6ebf2"><div class="fields" style="grid-template-columns:repeat(3,minmax(220px,1fr))"><label>开票方名称<input id="seller-filter"></label><label>开票方统一社会信用代码<input id="seller-tax-filter"></label><label>开票人<input id="issuer-filter"></label><label>开票日期<span><input id="invoice-date-start" type="date" aria-label="开票日期开始"> 至 <input id="invoice-date-end" type="date" aria-label="开票日期结束"></span></label><label>购买方名称<input id="buyer-filter"></label><label>购买方统一社会信用代码<input id="buyer-tax-filter"></label><label>匹配状态<select id="state"><option value="">全部</option><option>未匹配</option><option>已匹配-全额（系统）</option><option>待人工匹配</option><option>已匹配-全额（人工）</option><option>已匹配-部分（人工）</option><option>已匹配-全额（其他系统）</option></select></label><label>来源<select id="origin-filter"><option value="">全部</option><option>自动拉取</option><option>手动拉取</option><option>导入</option></select></label><label>认证状态<select id="auth-filter"><option value="">全部</option><option>待认证</option><option>已认证</option><option>无需认证</option></select></label><label>认证日期<span><input id="tax-date-start" type="month" aria-label="认证日期开始"> 至 <input id="tax-date-end" type="month" aria-label="认证日期结束"></span></label><label>做账状态<select id="account-filter"><option value="">全部</option><option>未生成</option><option>待推送</option><option>已推送</option><option>推送失败</option></select></label><label>勾选认证时间<span><input id="confirm-date-start" type="date" aria-label="勾选认证时间开始"> 至 <input id="confirm-date-end" type="date" aria-label="勾选认证时间结束"></span></label><label>采购订单号<input id="order-filter"></label><label>金蝶采集状态<select id="collection-filter"><option value="">全部</option><option>待采集</option><option>已采集</option></select></label><label>登记超额<select id="excess-filter"><option value="">全部</option><option>超额</option><option>未超额</option></select></label><label>红冲原因<input id="red-filter" placeholder="输入原因关键词"></label></div><div class="actions"><button class="primary" id="apply-filters">查询</button></div></div><div class="scroll"><table id="ledger"><thead><tr id="column-headers"></tr></thead></table></div>
+<div id="filter-panel" hidden style="padding:16px;border-top:1px solid #e6ebf2"><div class="fields" style="grid-template-columns:repeat(3,minmax(220px,1fr))"><label>开票方名称<input id="seller-filter"></label><label>开票方统一社会信用代码<input id="seller-tax-filter"></label><label>开票人<input id="issuer-filter"></label><label>开票日期<span><input id="invoice-date-start" type="date" aria-label="开票日期开始"> 至 <input id="invoice-date-end" type="date" aria-label="开票日期结束"></span></label><label>购买方名称<input id="buyer-filter"></label><label>购买方统一社会信用代码<input id="buyer-tax-filter"></label><label>匹配状态<select id="state"><option value="">全部</option><option>未匹配</option><option>待人工匹配</option><option>部分匹配</option><option>全额匹配</option><option>其他系统匹配</option></select></label><label>来源<select id="origin-filter"><option value="">全部</option><option>自动拉取</option><option>手动拉取</option><option>导入</option></select></label><label>认证状态<select id="auth-filter"><option value="">全部</option><option>待认证</option><option>已认证</option><option>无需认证</option></select></label><label>认证日期<span><input id="tax-date-start" type="month" aria-label="认证日期开始"> 至 <input id="tax-date-end" type="month" aria-label="认证日期结束"></span></label><label>做账状态<select id="account-filter"><option value="">全部</option><option>未生成</option><option>待推送</option><option>已推送</option><option>推送失败</option></select></label><label>勾选认证时间<span><input id="confirm-date-start" type="date" aria-label="勾选认证时间开始"> 至 <input id="confirm-date-end" type="date" aria-label="勾选认证时间结束"></span></label><label>采购订单号<input id="order-filter"></label><label>金蝶采集状态<select id="collection-filter"><option value="">全部</option><option>待采集</option><option>已采集</option></select></label><label>登记超额<select id="excess-filter"><option value="">全部</option><option>超额</option><option>未超额</option></select></label><label>红冲原因<input id="red-filter" placeholder="输入原因关键词"></label></div><div class="actions"><button class="primary" id="apply-filters">查询</button></div></div><div class="scroll"><table id="ledger"><thead><tr id="column-headers"></tr></thead></table></div>
 <footer id="count"></footer></main>
+<main id="registration-page" role="tabpanel" aria-labelledby="nav-register" hidden><div class="toolbar"><button class="primary" id="registration-create">＋ 进项发票登记</button><button id="registration-create-new">进项发票新增（新）</button><div class="registration-tabs"><label><input type="radio" name="registration-scope" value="进行中" checked> 进行中</label><label><input type="radio" name="registration-scope" value="完成" > 完成</label><label><input type="radio" name="registration-scope" value="所有" > 所有</label><label><input type="radio" name="registration-scope" value="草稿" > 草稿</label></div><button id="registration-pull">↓ 进项发票拉取</button><input class="search" id="registration-search" placeholder="单据编号"></div><div class="scroll"><table id="registration-list"><thead><tr><th><input type="checkbox" id="registration-all" aria-label="全选登记单"></th><th>序号</th><th>操作</th><th>单据编号</th><th>供应商</th><th>业务员</th><th>发票状态</th><th>登记来源</th><th>发票类别</th><th>总金额</th><th>价税合计</th><th>制单员</th><th>制单时间</th><th>备注</th><th>作废原因</th></tr></thead><tbody id="registration-rows"></tbody></table></div><footer id="registration-count"></footer><div class="registration-current" id="registration-current">选择登记单，查看发票明细。</div></main>
+<main id="batch-registration-page" role="tabpanel" aria-labelledby="nav-batch" hidden><div class="preserved-page"><h1>进项发票批量登记</h1><p>沿用现有 PC 批量登记功能，本次原型暂未展开该页面。</p></div></main><main id="invoice-handle-page" role="tabpanel" aria-labelledby="nav-handle" hidden><div class="preserved-page"><h1>进项发票处理</h1><p>沿用现有 PC 进项发票处理功能，本次原型暂未展开该页面。</p></div></main>
 <dialog id="dialog"><button id="drawer-expand" class="drawer-expand" aria-label="展开抽屉" title="展开 / 还原">⛶</button><button id="drawer-close" aria-label="关闭抽屉" class="drawer-close">×</button><h2 id="title"></h2><div id="content"></div><div class="notice" id="message" role="status"></div><div class="actions" id="actions"></div></dialog>
 <script>
+const pendingCollectionHelp="登记时填写的票面金额，非采集发票金额。";
+function registrationExcessHelp(invoice,a){return '已登记合计'+money(a.matched)+'，票面金额'+money(invoice.total)+'，超出'+money(a.excess)+'。红字按额度绝对值核对。';}
 const money=v=>new Intl.NumberFormat('zh-CN',{style:'currency',currency:'CNY'}).format(v);
 const effective=['审核中','待确认','完成','抵扣'];
 const live=line=>effective.includes(line.state);
@@ -116,30 +237,33 @@ const invoices=[
 const columns=[{"id":0,"label":"发票号码"},{"id":14,"label":"开票方名称"},{"id":6,"label":"发票金额"},{"id":8,"label":"已匹配金额"},{"id":5,"label":"匹配状态"},{"id":"registration","label":"登记明细编号"},{"id":"order","label":"采购订单号"},{"id":22,"label":"开票日期"},{"id":10,"label":"认证状态"},{"id":12,"label":"做账状态"},{"id":1,"label":"发票类型"},{"id":3,"label":"蓝/红"},{"id":4,"label":"发票状态"},{"id":9,"label":"未匹配金额"},{"id":7,"label":"发票税额"},{"id":2,"label":"台账建档来源"},{"id":11,"label":"认证日期"},{"id":13,"label":"勾选认证时间"},{"id":15,"label":"开票方统一社会信用代码/纳税人识别号"},{"id":16,"label":"购买方名称"},{"id":17,"label":"购买方统一社会信用代码/纳税人识别号"},{"id":18,"label":"PDF文件"},{"id":19,"label":"OFD文件"},{"id":20,"label":"XML文件"},{"id":21,"label":"开票人"},{"id":23,"label":"创建日期"},{"id":24,"label":"更新日期"},{"id":25,"label":"备注"},{"id":"operation","label":"操作"}];
 const defaultColumns=[0,14,6,8,5,"registration","order",22,10,12,1,3,4,"operation"];
 columns.splice(columns.findIndex(column=>column.id==='order')+1,0,{id:'orderAmount',label:'订单关联金额'});
-defaultColumns.push('orderAmount');
+defaultColumns.push('orderAmount',9);
 columns.unshift(columns.splice(columns.findIndex(c=>c.id==='operation'),1)[0]);
 columns.splice(columns.findIndex(c=>c.id===4)+1,0,{id:'redReason',label:'红冲原因'});
 defaultColumns.push('redReason',18,19,20);
 let visibleColumns=new Set(defaultColumns);
 invoices[0].redForms=[{code:'HZXX-20261119001',date:'2026-11-19',amount:200,reason:'开票有误，商品名称填写错误'}];
 invoices[4].redForms=[{code:'HZXX-20261119002',date:'2026-11-19',amount:100,reason:'销售折让，价格调整'},{code:'HZXX-20261119003',date:'2026-11-19',amount:150,reason:'部分退货'}];
+// 已采集且仍有余额的登记交互示例。
+invoices.push({number:'26312000000000861358',seller:'上海华兴科技有限公司',synced:true,total:1000,origin:'金蝶自动拉取',lines:[makeLine('JXDJ-46001','PO-0848 / 001',600,'完成','系统')]});
 const drafts=[];
 let next=10;
 const $=s=>document.querySelector(s);
+function hasFace(invoice){return invoice.total!==null&&invoice.total!==''&&Number.isFinite(Number(invoice.total));}
 function amounts(invoice){
- const matched=invoice.lines.filter(settled).reduce((s,l)=>s+l.amount,0);
- const pending=invoice.lines.filter(l=>live(l)&&!settled(l)).reduce((s,l)=>s+l.amount,0);
- return {matched,pending,excess:invoice.synced?Math.max(0,matched+pending-invoice.total):0,available:Math.max(0,invoice.total-matched-pending)};
+ const actual=Math.round(invoice.lines.filter(live).reduce((s,l)=>s+Number(l.amount),0)*100)/100;
+ const matched=invoice.otherSystem&&hasFace(invoice)?Number(invoice.total):actual;
+ const remainder=hasFace(invoice)?Math.round((Number(invoice.total)-matched)*100)/100:null;
+ const unmatched=remainder===null?null:Number(invoice.total)<0?Math.min(0,remainder):Math.max(0,remainder);
+ return {matched,unmatched,excess:hasFace(invoice)?Math.max(0,Math.round((Math.abs(matched)-Math.abs(invoice.total))*100)/100):0};
 }
 function status(invoice){
- if(invoice.otherSystem)return "已匹配-全额（其他系统）";
+ if(invoice.otherSystem)return '其他系统匹配';
  const a=amounts(invoice);
- if(!a.matched)return a.pending?'登记处理中':'待人工匹配';
- if(!invoice.synced)return '已匹配（人工）';
- const sources=new Set(invoice.lines.filter(settled).map(l=>l.source));
- const source=sources.size>1?'系统＋人工':[...sources][0];
- if(a.matched>invoice.total)return '登记超额';
- return (a.matched===invoice.total?'已匹配-全额':'已匹配-部分')+'（'+source+'）';
+ if(!hasFace(invoice))return '—';
+ if(!a.matched)return invoice.needsManual||invoice.lines.some(l=>!live(l))?'待人工匹配':'未匹配';
+ if(a.excess)return '—';
+ return Math.abs(a.matched)===Math.abs(invoice.total)?'全额匹配':'部分匹配';
 }
 function render(){
  const table=$('#ledger');table.querySelectorAll('tbody').forEach(x=>x.remove());
@@ -169,7 +293,7 @@ function render(){
  const a=amounts(invoice),lines=invoice.lines.filter(live),rows=Math.max(1,lines.length);
  const stateText=status(invoice);
  const stateClass=stateText==='登记超额'?'status-danger':stateText.includes('全额')?'status-success':stateText==='未匹配'?'status-neutral':'status-progress';
- const values=[invoice.number,'增值税专用发票',invoice.origin,'<span class="status-progress">蓝字发票</span>',invoice.synced?(invoice.redForms?'<span class="line-state pending">部分红冲</span>':'<span class="status-success">正常</span>'):'—','<span class="'+stateClass+'">'+stateText+'</span>',money(invoice.total)+(invoice.synced?'':' <span class="line-state">（待采集）</span>'),'—',money(a.matched)+(a.excess?'<br><span class="excess-tag">登记超额 '+money(a.excess)+'</span>':''),invoice.synced?money(Math.max(0,invoice.total-a.matched)):'—','待认证','—','未生成','—',invoice.seller,'—','示例采购公司','—','—','—','—','—','2026-11-18','2026-11-18','2026-11-18','—'];
+ const values=[invoice.number+(invoice.synced?'':' <span class="pending-collection" data-tooltip="'+pendingCollectionHelp+'" aria-label="待采集：'+pendingCollectionHelp+'" tabindex="0">待采集</span>'),(invoice.type||'—'),invoice.origin,'<span class="status-progress">'+(Number(invoice.total)<0?'红字发票':'蓝字发票')+'</span>',invoice.synced?(invoice.redForms?'<span class="line-state pending">部分红冲</span>':'<span class="status-success">正常</span>'):'—','<span class="'+stateClass+'">'+stateText+'</span>','<span'+(invoice.synced?'':' data-tooltip="'+pendingCollectionHelp+'"')+'>'+(hasFace(invoice)?money(invoice.total):'—')+'</span>','—',money(a.matched)+(a.excess?'<br><span class="excess-tag" tabindex="0" data-tooltip="'+registrationExcessHelp(invoice,a)+'" aria-label="'+registrationExcessHelp(invoice,a)+'">登记超额 '+money(a.excess)+'</span>':''),a.unmatched===null?'—':money(a.unmatched),'待认证','—','未生成','—',invoice.seller,'—','示例采购公司','—','—','—','—','—','2026-11-18','2026-11-18','2026-11-18','—'];
 
  const tbody=document.createElement('tbody');
  tbody.innerHTML=Array.from({length:rows},(_,rowIndex)=>{
@@ -182,15 +306,15 @@ function render(){
  return '<td class="money" title="当前发票通过本笔登记关联到该订单的含税金额">'+(line?money(line.amount):'-')+'</td>';
  }
  if(column.id==='order'){
- return '<td>'+(line?'<button class="link" data-order="'+line.order+'" data-invoice="'+invoice.number+'">'+line.order.split(' / ')[0]+'</button>':'-')+'</td>';
+ return '<td>'+(line&&line.order?'<button class="link" data-order="'+line.order+'" data-invoice="'+invoice.number+'">'+line.order.split(' / ')[0]+'</button>':'-')+'</td>';
  }
  if(rowIndex>0)return '';
  if(column.id==='redReason'){
  const forms=invoice.redForms||[];
  return '<td rowspan="'+rows+'" style="white-space:normal;min-width:220px;max-width:300px">'+(forms.length?'<button class="link" data-red="'+invoice.number+'">'+forms.map(f=>f.reason).join('；')+'</button>':'-')+'</td>';
  }
- const canMatch=invoice.synced&&a.available>0&&!invoice.otherSystem;
- const canOther=invoice.synced&&!a.matched&&!a.pending&&!invoice.otherSystem;
+ const canMatch=invoice.synced&&a.unmatched!==null&&Math.abs(a.unmatched)>0&&!invoice.otherSystem;
+ const canOther=invoice.synced&&!a.matched&&!invoice.otherSystem;
  const menu='<details class="row-menu"><summary aria-label="发票操作">⋮</summary><div>'+
  '<button class="link" data-invoice-detail="'+invoice.number+'">详情</button>'+
  '<button class="link" data-match="'+invoice.number+'" '+(canMatch?'':'disabled title="当前发票无可匹配额度或尚未采集"')+'>手动匹配</button>'+
@@ -210,6 +334,7 @@ function close(){ $('#dialog').close(); }
 $('#drawer-close').onclick=close;
 $('#drawer-expand').onclick=()=>$('#dialog').classList.toggle('maximized');
 function open(title,content,buttons=[]){
+ $('#dialog').classList?.remove('registration-visual');
  $('#title').textContent=title;$('#content').innerHTML=content;$('#message').textContent='';$('#actions').innerHTML='';
  for(const item of buttons){
  const button=document.createElement('button');button.textContent=item.label;if(item.primary)button.className='primary';button.onclick=item.action;$('#actions').append(button);
@@ -217,11 +342,26 @@ function open(title,content,buttons=[]){
  if(!$('#dialog').open)$('#dialog').showModal();
 }
 function registrationDetail(invoice,lineId){
- const code=lineId;
- const related=invoices.flatMap(record=>record.lines.filter(line=>line.id===code).map(line=>({record,line})));
- const total=related.reduce((sum,item)=>sum+item.line.amount,0);
- const rows=related.map(({record,line})=>'<tr><td>'+record.number+'</td><td>'+line.id+'</td><td><button class="link" data-order="'+line.order+'" data-invoice="'+record.number+'">'+line.order.split(' / ')[0]+'</button></td><td>'+money(line.amount)+'</td><td>'+line.state+'</td></tr>').join('');
- open('进项发票登记详情','<div class="fields"><div>供应商：'+invoice.seller+'</div><div>业务员：—</div><div>发票类别：采购发票</div><div>制单员：—</div><div>制单时间：2026-11-18</div><div>单据状态：'+related[0].line.state+'</div><div>合计未税金额：—</div><div>合计税额：—</div><div>合计价税合计：'+money(total)+'</div><div>单据编号：'+code+'</div><div>备注：—</div><div>附件：—</div></div><h3>发票明细</h3><div style="overflow:auto"><table class="small-table"><tr><th>发票号码</th><th>登记明细编号</th><th>关联订单明细</th><th>价税合计</th><th>明细状态</th></tr>'+rows+'</table></div><p class="subtle">审批进度：'+related[0].line.state+'（演示数据）</p>');
+ const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const changed=t=>'<span style="color:#b45309;font-weight:600">'+t+'</span>';
+ const related=invoices.flatMap(record=>record.lines.filter(line=>line.id===lineId).map(line=>({record,line})));
+ if(!related.length)return;
+ const meta=related.find(x=>x.line.registrationMeta)?.line.registrationMeta||{};
+ const groups=[...new Set(related.map(x=>x.record.number))].map(number=>{const items=related.filter(x=>x.record.number===number),card=meta.cards?.find(c=>c.number===number);return {number,items,card,total:items.reduce((n,x)=>n+Math.round(x.line.amount*100),0)/100};});
+ const netFor=c=>c?.products?c.products.reduce((sum,p)=>sum+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0)/100:c?.orders?.reduce((n,o)=>n+(o.products||[]).filter(p=>p.checked).reduce((sum,p)=>sum+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0),0)/100;
+ const total=related.reduce((n,x)=>n+Math.round(x.line.amount*100),0)/100;
+ const allKnown=groups.every(g=>g.card?.orders?.length||g.card?.products?.length),net=allKnown?groups.reduce((n,g)=>n+Math.round(netFor(g.card)*100),0)/100:null;
+ const rows=groups.map((g,i)=>{const c=g.card||{},split=c.invoiceStockSalesmanDTOS||c.apportion||[],file=c.file;return '<tr><td>'+esc(c.seller||g.items[0].record.seller)+'</td><td>'+esc(c.code||'—')+'</td><td>'+esc(g.number)+'</td><td>'+esc(c.type||'—')+'</td><td>'+(file?(c.url?'<button class="link" data-reg-file="'+i+'">查看</button>':'已记录：'+esc(file)+'（无可用预览）'):!meta.cards?'历史文件请在附件中查看。':'—')+'</td><td>'+changed(c.color==='红字'?'是':c.color==='蓝字'?'否':'—')+'</td><td>'+changed(c.face!==undefined&&c.face!==''?money(c.face):'—')+'</td><td>'+(c.orders?.length||c.products?.length?money(netFor(c)):'—')+'</td><td>'+esc(split.map(x=>x.name+'（'+money(x.amount)+'）').join('、')||'—')+'</td><td>'+(c.orders?.length||c.products?.length?money(g.total-netFor(c)):'—')+'</td><td><span data-tooltip="本次关联订单的含税金额合计，可能只是整张发票金额的一部分。" tabindex="0">'+changed(money(g.total))+'</span></td><td>'+esc(c.date||'—')+'</td><td>'+esc(c.over||'—')+'</td><td>'+esc(c.remark||'—')+'</td><td>'+esc([...new Set(g.items.map(x=>x.line.state))].join('、'))+'</td><td><button class="link" data-reg-orders="'+i+'">'+(c.products?'商品明细':'关联订单详情')+'</button></td></tr>';}).join('');
+ open('进项发票登记详情','<div class="fields"><div>供应商：'+esc(meta.supplier||invoice.seller)+'</div><div>业务员：'+esc(meta.agent||'—')+'</div><div>发票类别：'+esc(meta.category||'—')+'</div><div>制单员：—</div><div>制单时间：—</div><div>单据状态：'+esc(registrationDocumentState(related.map(x=>x.line.state)))+'</div><div>合计未税金额：'+(net===null?'—':money(net))+'</div><div>合计税额：'+(net===null?'—':money(total-net))+'</div><div><span style="color:#b45309;font-weight:600">合计价税合计（本单登记金额）：</span>'+money(total)+'</div><div>单据编号：'+esc(lineId)+'</div><div>备注：'+esc(meta.remark||'—')+'</div><div><span style="color:#b45309;font-weight:600">'+(meta.cards?'补充附件':'附件')+'：</span>'+esc(meta.attachments?.join('、')||(!meta.cards?'历史发票文件及资料.pdf（历史附件）':'—'))+'</div></div><p style="color:#b45309;font-size:12px">橙色字体为本次改造新增或调整的内容。</p><h3>发票明细</h3><div style="overflow:auto"><table class="small-table" style="min-width:1800px"><thead><tr>'+['发票单位','发票代码','发票号码','发票类型','发票文件','是否冲红','票面含税金额','总金额','业务员分摊','税额','价税合计（本次登记金额）','发票日期','发票超期日期','备注','处理结果','操作'].map(t=>'<th>'+(['是否冲红','票面含税金额','价税合计（本次登记金额）'].includes(t)?changed(t):t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div><p class="subtle">审批进度：'+esc(registrationDocumentState(related.map(x=>x.line.state)))+'（演示数据）</p>');
+ document.querySelectorAll('[data-reg-file]').forEach(b=>b.onclick=()=>window.open(groups[Number(b.dataset.regFile)].card.url,'_blank','noopener'));
+ document.querySelectorAll('[data-reg-orders]').forEach(b=>b.onclick=()=>showRegistrationOrders(groups[Number(b.dataset.regOrders)]));
+ function showRegistrationOrders(g){
+ const c=g.card;
+ if(c?.products){showBatchProducts(c,lineId,()=>registrationDetail(invoice,lineId));return;}
+ const orders=c?.orders||g.items.map(x=>({code:x.line.order,amount:x.line.amount,products:[]}));
+ const html=orders.map(o=>'<section class="pc-selected-order"><div class="pc-order-info"><span>采购订单号：'+esc(o.code.split(' / ')[0])+'</span><span>本次登记含税金额：'+money(o.amount)+'</span><span>业务员：'+esc(o.agent||'—')+'</span><div class="pc-order-remark">订单备注：'+esc(o.remark||'—')+'</div></div><div style="overflow:auto"><table class="small-table"><thead><tr><th>产品名称</th><th>规格型号</th><th>单位</th><th>本次数量</th><th>含税单价</th><th>含税总价</th><th>税率</th></tr></thead><tbody>'+(o.products||[]).filter(p=>p.checked).map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(p.spec)+'</td><td>'+esc(p.unit)+'</td><td>'+esc(p.qty)+'</td><td>'+(Number(p.qty)?Number((p.gross/p.qty).toFixed(8)).toLocaleString('zh-CN',{maximumFractionDigits:8}):'—')+'</td><td>'+money(p.gross)+'</td><td>'+esc(p.rate)+'%</td></tr>').join('')+'</tbody></table></div></section>').join('');
+ open('关联订单详情','<p>发票号码：'+esc(g.number)+'　登记单号：'+esc(lineId)+'</p>'+html,[{label:'返回登记详情',action:()=>registrationDetail(invoice,lineId)}]);
+ }
 }
 function detail(invoice,lineId){
  const a=amounts(invoice),lines=lineId?invoice.lines.filter(l=>l.id===lineId):invoice.lines;
@@ -230,46 +370,292 @@ function detail(invoice,lineId){
  const buttons=[];
  if(lineId&&selected&&live(selected)){
  if(['审核中','待确认'].includes(selected.state))buttons.push({label:selected.state==='审核中'?'审核通过':'确认生效',primary:true,action:()=>{
- if(selected.state==='待确认'&&a.excess){$('#message').textContent='超额时是否允许确认生效尚待评审，本演示暂拦截确认。';return;}
- invoice.lines.filter(l=>l.id===lineId).forEach(l=>l.state=selected.state==='审核中'?'待确认':'完成');render();detail(invoice,lineId);
+ const before=ledgerSnapshot(invoice);
+ invoice.lines.filter(l=>l.id===lineId).forEach(l=>l.state=selected.state==='审核中'?'待确认':'完成');recordLedgerChange(invoice,'登记状态更新','李敏',before);render();detail(invoice,lineId);
  }});
- for(const action of ['退回','报损','作废'])buttons.push({label:action,action:()=>{invoice.lines.filter(l=>l.id===lineId).forEach(l=>l.state=action);render();detail(invoice,lineId);}});
+ for(const action of ['退回','驳回','作废','撤销'])buttons.push({label:action,action:()=>{processInvoiceDetail(invoice,lineId,action);detail(invoice,lineId);}});
  }
  open(lineId||'全部登记明细及操作记录','<p>发票号码 '+invoice.number+'<br>票面金额 '+money(invoice.total)+(invoice.synced?'':'（待采集）')+' · 已匹配 '+money(a.matched)+(a.excess?'<br><span class="warning">登记超额 '+money(a.excess)+'</span>':'')+'</p><h3>全部登记明细</h3>'+table,buttons);
 }
-function register(batch=false){
- open(batch?'进项发票批量登记':'进项发票登记','<div class="fields"><label>发票号码<input id="number" value="26312000000000861353" inputmode="numeric"></label><label>供应商<input id="seller" value="上海华兴科技有限公司"></label></div><p>填写本次订单明细及含税金额，登记金额自动汇总。</p><textarea id="orders" style="width:100%;height:100px;font:inherit" aria-label="订单明细及金额">'+(batch?'PO-0848 / 001,200\nPO-0849 / 001,100':'PO-0848 / 001,200')+'</textarea><p class="subtle">每行填写一个订单明细，英文逗号后填写含税金额。</p><p id="sum"></p><div id="repeat"></div>',[
- {label:'保存草稿',action:()=>save(false)},
- {label:'提交审核',primary:true,action:()=>save(true)}
- ]);
- let confirmedKey='';
- function entries(){
- return $('#orders').value.trim().split(/\n/).filter(Boolean).map(row=>{
- const parts=row.split(',');return {order:parts[0].trim(),amount:Number(parts[1])};
- });
+function register(batch=false,prefill=null,variant='legacy',multi=null){
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const sellers=[...new Set(['上海华兴科技有限公司','上海瑞丰贸易有限公司','上海联达设备有限公司',...invoices.map(i=>i.seller)])];
+ const catalog=[{code:'PO-0848 / 001',name:'设备采购',seller:sellers[0],available:800},{code:'PO-0849 / 002',name:'配套材料',seller:sellers[0],available:500},{code:'PO-0831 / 001',name:'商品A',seller:sellers[1],available:800},{code:'PO-0845 / 002',name:'商品B',seller:sellers[1],available:600},{code:'PO-0852 / 001',name:'设备配件',seller:sellers[2],available:1000}];
+ let form={number:prefill?.number||'',supplier:prefill?.seller||'',rawSeller:'',face:prefill?(prefill.total??''):'',date:'',type:'',color:'蓝字',category:'',code:'',over:'',remark:'',file:null,url:'',orders:[],apportion:[]};
+ multi=null; // 新增固定一张；历史多票详情独立保留。
+ const salesmen=[{name:'张石磊',dept:'示例采购一部'},{name:'李敏',dept:'示例采购二部'}];
+ const supplierAgents=new Map(sellers.map((seller,i)=>[seller,salesmen.map((person,index)=>({...person,isDefault:index===(i===1?1:0)}))]));
+ let selected=new Set(),pickerOrders=[],pickerTab='choose',apportionDraft=[];
+ catalog.forEach((o,i)=>{o.orderTotal=o.available+200;o.agent=i%2?'李敏':'张石磊';o.created='2026-11-18';o.region='示例采购主体';o.invoiceType='增值税专用发票';o.contract='示例合同-'+String(i+1).padStart(3,'0');o.remark=i===0?'示例：本次登记首批到货商品':i===1?'示例：按实际验收数量登记':'';});
+ function openRegistration(title,content,buttons){if(variant==='new')buttons=buttons.filter(b=>b.label!=='提交并录入下一张');open(variant==='new'?'进项发票新增（新）':title,variant==='legacy'?registrationTableLayout(content):content,buttons);$('#dialog').classList?.add('registration-visual');}
+ openRegistration(prefill?'手动匹配 · 进项发票登记':'新建进项发票登记',`
+ <div class="single-file"><label>发票文件 <b style="color:#db6054">*</b></label><button id="reg-upload-first" title="支持 PDF、图片、OFD、XML">上传发票</button><span id="reg-file-name">未上传</span><button id="reg-file-view" class="link" hidden>查看</button><button id="reg-file-remove" class="link" hidden>移除</button><button id="reg-file-recognize" hidden disabled>识别填写</button><input type="file" id="reg-single-file" accept=".pdf,.png,.jpg,.jpeg,.ofd,.xml" hidden></div>
+ <div class="single-heading"><div><strong>登记信息</strong></div></div><div class="single-form registration-basic-fields"><label class="basic-supplier">供应商／开票方 <b>*</b><input id="reg-supplier" list="reg-suppliers" placeholder="识别带出，或搜索并选择供应商"><small id="reg-supplier-hint" hidden></small></label><label>业务员 <b>*</b><select id="reg-agent" disabled><option value="">请先选择供应商</option></select></label><label><span title="系统内用于区分采购发票、费用发票等业务类别">发票类别</span> <b>*</b><select id="reg-category"><option value="">请选择</option><option>采购发票</option><option>费用发票</option></select><small id="reg-category-hint" hidden></small></label></div>
+ <div class="single-other registration-attachments"><label><span>补充附件</span><span class="attachment-controls"><button type="button" id="reg-attachments-upload">上传附件</button><span id="reg-attachments-name">未上传</span></span><input id="reg-attachments" type="file" multiple aria-label="补充附件" hidden></label></div>
+ <div class="single-heading"><div><strong>发票信息</strong></div></div><div id="reg-ledger-summary" class="reg-ledger-summary" hidden aria-live="polite"></div>
+ <div class="single-form">
+ <label>发票号码 <b>*</b><input id="reg-number" inputmode="numeric" placeholder="输入发票号码" ${prefill?'readonly':''}></label>
+ <label>发票日期 <b>*</b><input id="reg-date" type="date"></label><label>发票超期日期 <b>*</b><input id="reg-over" type="date"></label>
+ <label><span data-tooltip="整张发票的含税总金额，不是本次登记金额。" tabindex="0">票面含税金额</span> <b>*</b><input id="reg-face" type="number" step="0.01" placeholder="填写整张发票金额"></label>
+ <label>发票类型 <b>*</b><select id="reg-type"><option value="">请选择</option><option>增值税专用发票</option><option>增值税普通发票</option><option>其他发票</option></select></label>
+ <label>是否冲红<span style="display:flex;align-items:center;gap:8px;width:100%"><input id="reg-red-flush" type="checkbox" style="width:auto">是（红字发票）</span><select id="reg-color" hidden><option>蓝字</option><option>红字</option></select><small id="reg-color-hint" hidden></small></label>
+ </div>
+ <datalist id="reg-suppliers">${sellers.map(s=>'<option value="'+esc(s)+'">').join('')}</datalist>
+ <div class="single-form"><label>发票代码<input id="reg-code"></label><label class="single-wide">备注<input id="reg-remark"></label></div>
+ <div id="reg-recognition-note" class="reg-note" role="status" hidden></div>
+ <div class="single-heading single-orders-heading"><div><strong>关联订单</strong><span>当前发票对应的订单及本次登记金额</span></div><button id="reg-choose-orders">＋关联订单</button></div>
+ <div id="reg-orders"></div><div id="reg-order-summary" hidden><div class="single-total"><span>总金额（未税）：<b id="reg-order-net">—</b>　税额：<b id="reg-order-tax">—</b></span><strong>价税合计（本次登记金额）：<em id="reg-total">¥0.00</em></strong></div><div class="single-apportion"><label>业务员分摊 <b>*</b></label><button id="reg-apportion-open" class="link">选择业务员分摊</button></div></div>
+
+ <div id="reg-registration-preview" class="reg-registration-preview" hidden aria-live="polite"></div>
+ <section id="reg-picker" hidden><div class="reg-picker-title"><strong>选择采购订单</strong><button id="reg-picker-close" class="link">×</button></div>
+ <div class="pc-picker-tabs"><button id="reg-tab-choose">添加订单</button><button id="reg-tab-selected">已选订单</button></div><p id="reg-picker-supplier" class="subtle"></p>
+ <div id="reg-choose-panel"><div class="pc-picker-filters"><label>供应商<input id="reg-order-supplier" disabled></label><label>业务员<select id="reg-order-agent"><option value="">全部</option><option>张石磊</option><option>李敏</option></select></label><label>制单日期<input id="reg-order-start" type="date"></label><label>至<input id="reg-order-end" type="date"></label><label>合同签署主体<select id="reg-order-region"><option value="">全部</option><option>示例采购主体</option></select></label><label>SKU名称<input id="reg-order-sku" placeholder="搜索商品名称"></label></div>
+ <div class="pc-picker-scroll"><table class="small-table"><thead><tr><th>选择</th><th>订单编号</th><th>供应商</th><th>业务员</th><th>订单金额</th><th>可登记金额</th><th>发票类型</th><th>制单时间</th><th>备注</th></tr></thead><tbody id="reg-picker-rows"></tbody></table></div></div>
+ <div id="reg-selected-panel" hidden></div><div id="reg-picker-error" class="warning" role="status"></div>
+ <div class="pc-picker-footer"><span id="reg-picker-total"></span><div class="actions"><button id="reg-picker-cancel">关闭</button><button id="reg-picker-next" class="primary">下一步</button><button id="reg-picker-confirm" class="primary" hidden>确定</button></div></div></section>
+ <section id="reg-apportion" hidden><div class="reg-picker-title"><strong>选择业务员分摊</strong><button id="reg-apportion-close" class="link">×</button></div><table class="small-table"><thead><tr><th>选择</th><th>序号</th><th>姓名</th><th>部门</th><th>金额</th></tr></thead><tbody id="reg-apportion-rows"></tbody></table><div id="reg-apportion-error" class="warning" role="status"></div><div class="pc-picker-footer"><span id="reg-apportion-total"></span><div class="actions"><button id="reg-apportion-cancel">关闭</button><button id="reg-apportion-confirm" class="primary">确定</button></div></div></section>
+`,[
+ {label:'取消',action:close},{label:'保存草稿',action:()=>save(false)},
+ {label:'提交并录入下一张',action:()=>save(true,true)},
+ {label:'保存并提交',primary:true,action:()=>save(true)}]);
+ $('#reg-supplier').value=form.supplier;$('#reg-number').value=form.number;$('#reg-face').value=form.face;refreshAgent(form.supplier,true);if(multi){for(const key of ['date','type','color','category','code','over','remark'])$('#reg-'+key).value=form[key];if(multi.agent)$('#reg-agent').value=multi.agent;if(form.file){$('#reg-file-name').textContent=form.file.name;$('#reg-file-view').hidden=$('#reg-file-remove').hidden=$('#reg-file-recognize').hidden=false;$('#reg-file-recognize').disabled=false;$('#reg-upload-first').textContent='更换';}$('#reg-choose-orders').textContent='＋关联订单';}
+ // 票号查台账与金额来源；正常关联不弹确认框。
+ const manualFaces=new Map();let ledgerNumber='',ledgerRecord=null,faceLocked=false;
+ function lookupLedger(){
+  const number=$('#reg-number').value.trim(),changed=number!==ledgerNumber;
+  if(changed){
+   const typed=$('#reg-face').value;
+   if(ledgerNumber&&!faceLocked)manualFaces.set(ledgerNumber,typed);
+   const initial=!ledgerNumber;
+   ledgerNumber=number;ledgerRecord=invoices.find(i=>i.number===number)||null;
+   if(ledgerRecord?.synced){$('#reg-face').value=ledgerRecord.total;faceLocked=true;}
+   else {$('#reg-face').value=manualFaces.get(number)??(ledgerRecord?.total??(initial&&!faceLocked?typed:''));faceLocked=false;}
+  }else{
+   ledgerRecord=invoices.find(i=>i.number===number)||null;
+   if(ledgerRecord?.synced){$('#reg-face').value=ledgerRecord.total;faceLocked=true;}
+   else if(faceLocked){$('#reg-face').value=manualFaces.get(number)||'';faceLocked=false;}
+  }
+  $('#reg-face').readOnly=faceLocked;
+  $('#reg-face').title=faceLocked?'整张发票的含税总金额，不是本次登记金额。已采集，不能修改。':'整张发票的含税总金额，不是本次登记金额。';
+  form.face=$('#reg-face').value;form.faceSource=faceLocked?'金蝶':'人工填写';
+  if(ledgerRecord&&!$('#reg-supplier').value.trim()&&sellers.includes(ledgerRecord.seller)){
+   form.supplier=ledgerRecord.seller;$('#reg-supplier').value=form.supplier;refreshAgent(form.supplier,true);supplierHint();
+  }
+  drawLedgerAmounts();
  }
- $('#orders').oninput=()=>{$('#sum').textContent='本次登记金额 '+money(entries().reduce((s,l)=>s+(Number.isFinite(l.amount)?l.amount:0),0));};
- $('#orders').oninput();
- function save(submit){
- const number=$('#number').value.trim(),seller=$('#seller').value.trim(),rows=entries();
- if(!/^d+$/.test(number)||!seller||!rows.length||rows.some(l=>!l.order||!Number.isFinite(l.amount)||l.amount<=0)){$('#message').textContent='请填写票号、供应商及正确的订单含税金额。';return;}
- let invoice=invoices.find(i=>i.number===number);
- const total=rows.reduce((s,l)=>s+Math.round(l.amount*100),0)/100;
- if(invoice&&invoice.synced&&total>amounts(invoice).available){$('#message').textContent='当前可登记 '+money(amounts(invoice).available)+'，本次 '+money(total)+'，超出 '+money(total-amounts(invoice).available)+'。已拦截本次操作。';return;}
- const duplicate=invoice&&!invoice.synced&&rows.some(r=>invoice.lines.some(l=>live(l)&&l.order===r.order));
- const key=number+JSON.stringify(rows);
- if(submit&&duplicate&&confirmedKey!==key){
- $('#message').textContent='重复登记提醒：同票同订单已有有效登记。';
- const label=document.createElement('label'),checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.onchange=()=>{confirmedKey=checkbox.checked?key:'';};
- label.append(checkbox,document.createTextNode(' 已核对原登记，确认继续本次登记'));$('#repeat').replaceChildren(label);return;
+ function drawLedgerAmounts(){
+  const record=ledgerRecord,summary=$('#reg-ledger-summary'),preview=$('#reg-registration-preview');
+  const face=faceLocked?record?.total:$('#reg-face').value;
+  const valid=face!==''&&Number.isFinite(Number(face)),matched=record?amounts(record).matched:0;
+  const available=valid?Math.max(0,Math.round((Math.abs(Number(face))-Math.abs(matched))*100)/100):null;
+  const signed=Number(face)<0?-available:available;let warning='';
+  if(record?.otherSystem)warning='该发票已在其他系统匹配，不能继续登记。';
+  else if(valid&&Math.abs(total())>available)warning='本次登记超过剩余额度 '+money(signed)+'，超出 '+money(Math.abs(total())-available)+'。';
+  if(record&&$('#reg-supplier').value.trim()&&$('#reg-supplier').value.trim()!==record.seller)warning='该票号对应供应商为“'+record.seller+'”，请核对。';
+  const pendingEdit=!!record&&!faceLocked&&valid&&(!hasFace(record)||Number(face)!==Number(record.total));
+  summary.hidden=!record&&!valid&&!warning;
+  const shownFace=record?(hasFace(record)?money(record.total):'—'):(valid?money(face):'—');
+  summary.innerHTML='<span>'+(record?'已有台账票面金额':'票面含税金额')+' <span class="face-amount-help" role="button" tabindex="0" aria-label="票面金额说明" data-tooltip="整张发票的含税总金额，不是本次登记金额。">?</span> <strong>'+shownFace+'</strong></span><span class="reg-money-divider"></span><span>'+(pendingEdit?'本次可登记（按本次填写金额）':'本次可登记')+' <strong>'+(valid?money(signed):'—')+'</strong></span>'+(warning?'<div class="reg-ledger-warning" role="status">'+esc(warning)+'</div>':'');
+  const editHint=$('#reg-face-edit-hint');if(editHint){editHint.hidden=!pendingEdit;editHint.textContent=pendingEdit?(hasFace(record)?'本次更正为':'本次填写')+money(face)+'，保存成功后'+(hasFace(record)?'更新':'补齐')+'台账票面金额。':'';}
+  preview.hidden=!valid||!form.orders.length;
+  if(valid){const remain=available-Math.abs(total());preview.innerHTML='<span>本次登记金额 <strong>'+money(total())+'</strong></span><span>'+(remain<0?'本次超出':'本次登记后剩余')+' <strong>'+money(remain<0?-remain:Number(face)<0?-remain:remain)+'</strong></span>';}
  }
- if(!submit){drafts.push({number,rows});close();render();return;}
- if(!invoice){invoice={number,seller,total:0,synced:false,origin:'手工登记',lines:[]};invoices.push(invoice);}
- if(!invoice.synced)invoice.total+=total;
- const id='JXDJ-'+String(45130+next++);
- rows.forEach(row=>invoice.lines.push(makeLine(id,row.order,row.amount,'审核中','人工')));
- close();render();
+ $('#reg-number').oninput=lookupLedger;$('#reg-number').onchange=lookupLedger;
+ $('#reg-face').oninput=()=>{if(faceLocked){$('#reg-face').value=ledgerRecord.total;}else manualFaces.set($('#reg-number').value.trim(),$('#reg-face').value);form.face=$('#reg-face').value;drawLedgerAmounts();};
+
+ function total(){return Math.round(form.orders.reduce((s,o)=>s+Number(o.amount||0),0)*100)/100;}
+ function unitPrice(product){const quantity=Number(product.qty),gross=Number(product.gross);return quantity&&Number.isFinite(quantity)&&Number.isFinite(gross)?'¥'+Number((gross/quantity).toFixed(8)).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:8}):'—';}
+ function read(){lookupLedger();for(const [key,id]of Object.entries({number:'number',face:'face',date:'date',type:'type',color:'color',category:'category',code:'code',over:'over',remark:'remark'}))form[key]=$('#reg-'+id).value.trim();}
+ function notice(message){$('#reg-recognition-note').hidden=false;$('#reg-recognition-note').textContent=message;}
+ function error(message,id){$('#message').textContent=message;if(id)$('#'+id).focus();return false;}
+ function syncApportion(){
+ const byAgent=new Map();for(const o of form.orders)byAgent.set(o.agent,(byAgent.get(o.agent)||0)+Math.round(Number(o.amount)*100));
+ form.apportion=[...byAgent].map(([name,amount])=>({name,dept:salesmen.find(s=>s.name===name)?.dept||'—',amount:amount/100}));
  }
+ function renderApportion(){
+ $('#reg-apportion-open').textContent=form.apportion.length?form.apportion.map(s=>s.name+'（'+money(s.amount)+'）').join('、'):'选择业务员分摊';
+ syncLegacyRow();
+ }
+ function syncLegacyRow(){
+ const amount=$('#legacy-order-amount'),invoiceTotal=$('#legacy-invoice-total'),apportion=$('#legacy-apportion'),file=$('#legacy-file-name'),view=$('#legacy-file-view');
+ if(amount){amount.textContent=money(total());amount.title='点击订单金额，关联或修改订单';}
+ if(invoiceTotal)invoiceTotal.textContent=money(total());
+ if(apportion){apportion.textContent=form.apportion.length?form.apportion.map(s=>s.name+'（'+money(s.amount)+'）').join('、'):'—';apportion.disabled=!form.orders.length;}
+ const issuer=$('#legacy-invoice-seller');if(issuer&&document.activeElement!==issuer)issuer.value=form.rawSeller||form.supplier;
+ if(file)file.textContent=form.file?.name||'—';if(view)view.hidden=!form.file;
+ }
+ function drawOrders(){
+
+ const rows=form.orders.map((o,i)=>{const products=o.products.filter(p=>p.checked);if(!products.length)return '<tr><td>'+esc(o.code.split(' / ')[0])+'</td><td colspan="5">—</td><td>'+esc(o.agent||'—')+'</td><td>'+money(o.available)+'</td><td>'+money(o.amount)+'</td><td><button data-remove="'+i+'" class="link">移除订单</button></td></tr>';return products.map((p,j)=>'<tr>'+(j===0?'<td rowspan="'+products.length+'">'+esc(o.code.split(' / ')[0])+'</td>':'')+'<td>'+esc(p.name)+'</td><td>'+esc(p.spec)+'</td><td class="money">'+unitPrice(p)+'</td><td class="money">'+esc(p.qty)+' '+esc(p.unit)+'</td><td class="money">'+money(p.gross)+'</td>'+(j===0?'<td rowspan="'+products.length+'">'+esc(o.agent)+'</td><td rowspan="'+products.length+'" class="money">'+money(o.available)+'</td><td rowspan="'+products.length+'" class="money"><button class="link" data-edit-order="'+i+'">'+money(o.amount)+'</button></td><td rowspan="'+products.length+'"><button data-edit-order="'+i+'" class="link">修改关联</button>　<button data-remove="'+i+'" class="link">移除订单</button></td>':'')+'</tr>').join('');}).join('');
+ $('#reg-orders').innerHTML='<div class="reg-table-wrap reg-order-details'+(!form.orders.length?' reg-order-empty':'')+'"><table class="small-table"><thead><tr><th>采购订单号</th><th>产品名称</th><th>规格型号</th><th>含税单价</th><th>本次数量</th><th>明细含税金额</th><th>业务员</th><th>订单可登记金额</th><th>订单本次开票金额</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ $('#reg-order-summary').hidden=!form.orders.length;
+ const net=form.orders.reduce((sum,o)=>sum+o.products.filter(p=>p.checked).reduce((n,p)=>n+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0),0)/100;
+ $('#reg-order-net').textContent=money(net);$('#reg-order-tax').textContent=money(total()-net);
+ $('#reg-total').textContent=money(total());
+ renderApportion();drawLedgerAmounts();
+ }
+ function supplierHint(){
+ const raw=form.rawSeller;$('#reg-supplier-hint').hidden=!raw||raw===form.supplier;$('#reg-supplier-hint').textContent=raw?(form.supplier?'票面开票方：'+raw+'；当前关联供应商：'+form.supplier+'，请核对。':'识别到开票方：'+raw+'；未匹配到系统供应商，请手工选择。'):'';
+ }
+ function refreshAgent(supplier,changed){
+ const list=supplierAgents.get(supplier)||[],control=$('#reg-agent'),previous=control.value;
+ control.disabled=!list.length;control.innerHTML=list.length?list.map(person=>'<option value="'+esc(person.name)+'">'+esc(person.name)+'</option>').join(''):'<option value="">请先选择供应商</option>';
+ control.value=!changed&&list.some(person=>person.name===previous)?previous:(list.find(person=>person.isDefault)?.name||list[0]?.name||'');
+ }
+ function setSupplier(value){
+ const changed=value!==form.supplier;
+ if(multi&&changed&&multi.cards.some(c=>c.orders.length)){error('当前登记单已有订单，请另建登记单录入其他供应商的发票。','reg-supplier');$('#reg-supplier').value=form.supplier;return false;}
+ if(value!==form.supplier&&form.orders.length){if(!confirm('更换供应商会清除当前关联订单，是否继续？')){$('#reg-supplier').value=form.supplier;return false;}form.orders=[];syncApportion();}
+ form.supplier=value;if(multi)multi.cards.forEach(c=>c.supplier=value);$('#reg-supplier').value=value;refreshAgent(value,changed);supplierHint();drawOrders();return true;
+ }
+ $('#reg-supplier').onchange=()=>setSupplier($('#reg-supplier').value.trim());
+ $('#reg-red-flush').onchange=()=>{$('#reg-color').value=$('#reg-red-flush').checked?'红字':'蓝字';};
+ $('#reg-choose-orders').textContent='＋关联订单';
+ $('#reg-attachments-upload').onclick=()=>$('#reg-attachments').click();
+ $('#reg-attachments').onchange=()=>{$('#reg-attachments-name').textContent=Array.from($('#reg-attachments').files||[]).map(f=>f.name).join('、')||'未上传';};
+ $('#reg-upload-first').onclick=()=>$('#reg-single-file').click();
+ $('#reg-single-file').onchange=e=>{const file=e.target.files[0];if(!file)return;if(form.file&&!confirm('更换发票文件后，请重新核对当前发票信息。是否继续？')){e.target.value='';return;}if(form.url)URL.revokeObjectURL(form.url);form.file=file;form.url=URL.createObjectURL(file);$('#reg-file-name').textContent=file.name;$('#reg-file-view').hidden=$('#reg-file-remove').hidden=$('#reg-file-recognize').hidden=false;$('#reg-file-recognize').disabled=false;$('#reg-upload-first').textContent='更换';$('#reg-recognition-note').hidden=true;syncLegacyRow();e.target.value='';};
+ $('#reg-file-recognize').onclick=()=>{if(!form.file)return;recognitionPreview(form,applyRecognition);};
+ function applyRecognition(data){if(!data)return;const edited=['number','date','code','type'].some(k=>$('#reg-'+k).value);if(edited&&!confirm('识别结果将填写发票字段，请核对已有修改。是否继续？'))return;for(const k of ['number','date','code','type'])if(data[k])$('#reg-'+k).value=data[k];lookupLedger();const old=ledgerRecord?.total;if(data.face!==undefined){if(ledgerRecord&&hasFace(ledgerRecord)&&Number(old)!==Number(data.face))notice(faceLocked?'识别金额与已采集金额不一致，以采集金额为准。':'识别金额与已有票面金额不一致，请核对；如原金额有误，请手动更正。');else if(!faceLocked)$('#reg-face').value=data.face;}if(data.seller){form.rawSeller=data.seller;if(sellers.includes(data.seller))setSupplier(data.seller);else supplierHint();}if(data.color){$('#reg-color').value=data.color;$('#reg-red-flush').checked=data.color==='红字';}read();drawLedgerAmounts();}
+ $('#reg-file-view').onclick=()=>{if(form.url)window.open(form.url,'_blank','noopener');};
+ $('#reg-file-remove').onclick=()=>{if(form.url)URL.revokeObjectURL(form.url);form.file=null;form.url='';$('#reg-file-name').textContent='未上传';$('#reg-file-view').hidden=$('#reg-file-remove').hidden=$('#reg-file-recognize').hidden=true;$('#reg-file-recognize').disabled=true;$('#reg-upload-first').textContent='上传发票';$('#reg-recognition-note').hidden=true;syncLegacyRow();};
+ $('#reg-color').onchange=()=>{$('#reg-color-hint').textContent='已手工选择，请与票面金额正负及实际发票核对。';};
+ $('#reg-category').onchange=()=>{$('#reg-category-hint').hidden=!!$('#reg-category').value;$('#reg-category-hint').textContent='请选择发票类别。';};
+ function cents(value){return Math.round(Number(value||0)*100);}
+ function newOrder(o){return {...o,amount:$('#reg-color').value==='红字'?-Math.abs(o.available):o.available,products:[{name:o.name,spu:'示例商品',spec:'标准型',unit:'件',weight:3,purchasePrice:60,purchaseQty:10,qty:0,gross:0,rate:13,checked:true},{name:o.name+'配件',spu:'示例配件',spec:'配套型',unit:'件',weight:2,purchasePrice:40,purchaseQty:10,qty:0,gross:0,rate:13,checked:true}]};}
+ function allocate(o){
+ const products=o.products.filter(p=>p.checked),amount=cents(o.amount);
+ if(!products.length)return '请选中商品。';
+ if(!Number.isFinite(Number(o.amount))||amount===0)return '请填写本次开票金额。';
+ if($('#reg-color').value==='红字'?amount>=0:amount<=0)return '本次开票金额的正负与蓝／红字不一致。';
+ const weights=products.reduce((s,p)=>s+p.weight,0);let used=0;
+ products.forEach((p,i)=>{const part=i===products.length-1?amount-used:Math.round(amount*p.weight/weights);used+=part;p.gross=part/100;p.qty=Number((p.gross/p.purchasePrice).toFixed(8));});
+ return '';
+ }
+ function syncSelection(){pickerOrders=pickerOrders.filter(o=>selected.has(o.code));for(const code of selected)if(!pickerOrders.some(o=>o.code===code)){const source=catalog.find(o=>o.code===code);if(source){const o=newOrder(source);allocate(o);pickerOrders.push(o);}}}
+ function pickerTotals(){
+ $('#reg-tab-selected').textContent='已选订单（'+selected.size+'）';$('#reg-tab-selected').disabled=!selected.size;$('#reg-picker-next').disabled=!selected.size;
+ const rows=catalog.filter(o=>selected.has(o.code));
+ $('#reg-picker-total').textContent=pickerTab==='choose'?'订单金额合计：'+money(rows.reduce((s,o)=>s+o.orderTotal,0))+'　可登记金额合计：'+money(rows.reduce((s,o)=>s+o.available,0)):'本次开票金额合计：'+money(pickerOrders.reduce((s,o)=>s+Number(o.amount||0),0));
+ }
+ function renderCandidates(){
+ const agent=$('#reg-order-agent').value,start=$('#reg-order-start').value,end=$('#reg-order-end').value,region=$('#reg-order-region').value,sku=$('#reg-order-sku').value.trim();
+ $('#reg-picker-rows').innerHTML=catalog.filter(o=>o.seller===form.supplier&&(!agent||o.agent===agent)&&(!start||o.created>=start)&&(!end||o.created<=end)&&(!region||o.region===region)&&(!sku||o.name.includes(sku))).map(o=>'<tr><td><input type="checkbox" aria-label="选择'+o.code+'" data-order-code="'+o.code+'" '+(selected.has(o.code)?'checked':'')+'></td><td>'+o.code.split(' / ')[0]+'</td><td>'+esc(o.seller)+'</td><td>'+o.agent+'</td><td>'+money(o.orderTotal)+'</td><td>'+money(o.available)+'</td><td>'+o.invoiceType+'</td><td>'+o.created+'</td><td title="'+esc(o.remark||'—')+'">'+esc(o.remark||'—')+'</td></tr>').join('')||'<tr><td colspan="9">当前条件下暂无示例订单。</td></tr>';
+ pickerTotals();
+ }
+ function renderSelected(){
+ $('#reg-selected-panel').innerHTML=pickerOrders.map((o,i)=>'<article class="pc-selected-order"><div class="pc-order-info"><span>订单编号：'+o.code.split(' / ')[0]+'</span><span>供应商：'+esc(o.seller)+'</span><span>业务员：'+o.agent+'</span><span>订单金额：'+money(o.orderTotal)+'</span><span>可登记金额：'+money(o.available)+'</span><span>发票类型：'+o.invoiceType+'</span><span>合同编号：'+o.contract+'</span><span class="pc-order-remark">订单备注：'+esc(o.remark||'—')+'</span></div><div class="pc-order-amount"><label>本次开票金额：<input data-picker-amount="'+i+'" type="number" step="0.01" value="'+esc(o.amount)+'"></label><button class="primary" data-allocate="'+i+'">将金额分配到商品上</button></div><div class="pc-picker-scroll"><table class="small-table"><tr><th>是否开该商品明细</th><th>spu名称</th><th>产品名称</th><th>规格型号</th><th>采购单价</th><th>采购数量</th><th>单位</th><th>含税单价</th><th>数量</th><th>含税总价</th><th>税率</th><th>税额</th><th>未税总价</th></tr>'+o.products.map((p,j)=>{const gross=Number(p.gross)||0,net=Math.round(gross/(1+Number(p.rate)/100)*100)/100;return '<tr><td><input type="checkbox" data-product-check="'+i+':'+j+'" '+(p.checked?'checked':'')+'></td><td>'+p.spu+'</td><td>'+esc(p.name)+'</td><td>'+p.spec+'</td><td>'+money(p.purchasePrice)+'</td><td>'+p.purchaseQty+'</td><td><select data-product-unit="'+i+':'+j+'"><option '+(p.unit==='件'?'selected':'')+'>件</option><option '+(p.unit==='套'?'selected':'')+'>套</option></select></td><td>'+unitPrice(p)+'</td><td><input type="number" step="0.00000001" data-product-qty="'+i+':'+j+'" value="'+p.qty+'"></td><td><input type="number" step="0.01" data-product-gross="'+i+':'+j+'" value="'+p.gross+'"></td><td><input type="number" min="0" max="100" step="0.01" data-product-rate="'+i+':'+j+'" value="'+p.rate+'">%</td><td>'+money(gross-net)+'</td><td>'+money(net)+'</td></tr>';}).join('')+'</table></div></article>').join('');
+ pickerTotals();
+ }
+ function showTab(tab){syncSelection();pickerTab=tab;$('#reg-choose-panel').hidden=tab!=='choose';$('#reg-selected-panel').hidden=tab!=='selected';$('#reg-picker-next').hidden=tab!=='choose';$('#reg-picker-confirm').hidden=tab!=='selected';$('#reg-tab-choose').className=tab==='choose'?'active':'';$('#reg-tab-selected').className=tab==='selected'?'active':'';tab==='choose'?renderCandidates():renderSelected();}
+ function openPicker(){
+ if(!setSupplier($('#reg-supplier').value.trim()))return;
+ if(!sellers.includes(form.supplier))return error('请先选择系统供应商，再关联订单。','reg-supplier');
+ pickerOrders=JSON.parse(JSON.stringify(form.orders));selected=new Set(pickerOrders.map(o=>o.code));$('#reg-picker-error').textContent='';
+ $('#reg-order-supplier').value=form.supplier;$('#reg-picker-supplier').textContent='沿用原PC操作：添加订单 → 已选订单 → 填写本次开票金额并分配到商品 → 确定。此处为演示数据。';
+ $('#reg-picker').hidden=false;showTab(selected.size?'selected':'choose');
+ if(variant==='legacy'){ $('#reg-picker').classList.add('legacy-order-popover');positionLegacyOrderPopover();}
+ }
+ $('#reg-choose-orders').onclick=openPicker;
+ $('#reg-picker-rows').onchange=e=>{const code=e.target.dataset.orderCode;if(code){e.target.checked?selected.add(code):selected.delete(code);syncSelection();pickerTotals();}};
+ for(const id of ['agent','start','end','region','sku'])$('#reg-order-'+id).oninput=renderCandidates;
+ $('#reg-tab-choose').onclick=()=>showTab('choose');$('#reg-tab-selected').onclick=()=>{if(selected.size)showTab('selected');};$('#reg-picker-next').onclick=()=>{if(selected.size)showTab('selected');};
+ const hidePicker=()=>{$('#reg-picker').hidden=true;$('#legacy-order-amount')?.setAttribute('aria-expanded','false');};$('#reg-picker-close').onclick=$('#reg-picker-cancel').onclick=hidePicker;
+ $('#reg-selected-panel').oninput=e=>{const d=e.target.dataset;if(d.pickerAmount!==undefined)pickerOrders[Number(d.pickerAmount)].amount=e.target.value;for(const [key,field]of [['productQty','qty'],['productGross','gross'],['productRate','rate']])if(d[key]!==undefined){const [i,j]=d[key].split(':').map(Number);pickerOrders[i].products[j][field]=e.target.value;}pickerTotals();};
+ $('#reg-selected-panel').onchange=e=>{const d=e.target.dataset;for(const [key,field]of [['productCheck','checked'],['productUnit','unit']])if(d[key]!==undefined){const [i,j]=d[key].split(':').map(Number);pickerOrders[i].products[j][field]=field==='checked'?e.target.checked:e.target.value;}if(d.productCheck!==undefined||d.productUnit!==undefined)renderSelected();};
+ $('#reg-selected-panel').onclick=e=>{const button=e.target.closest('[data-allocate]');if(button){const o=pickerOrders[Number(button.dataset.allocate)],message=allocate(o);$('#reg-picker-error').textContent=message;if(!message)renderSelected();}};
+ $('#reg-picker-confirm').onclick=()=>{
+ if(pickerTab!=='selected'||!pickerOrders.length)return;
+ for(const o of pickerOrders){const products=o.products.filter(p=>p.checked);let message='';if(!products.length)message='请选中商品。';else if(!Number.isFinite(Number(o.amount))||Number(o.amount)===0)message='请填写正确的本次开票金额。';else if(products.some(p=>!p.unit||!Number.isFinite(Number(p.gross))||!Number.isFinite(Number(p.qty))||!Number(p.qty)||!Number.isFinite(Number(p.rate))||Number(p.rate)<0||Number(p.rate)>100))message='请完善商品的单位、数量、含税总价和税率。';else if(products.reduce((s,p)=>s+cents(p.gross),0)!==cents(o.amount))message='商品的含税总价需要等于本次开票金额，请重新分配。';else if(Math.abs(Number(o.amount))>o.available)message='本次订单关联金额超过订单可登记金额。';else if(products.some(p=>Number(p.gross)*Number(o.amount)<=0||Number(p.qty)*Number(o.amount)<=0))message='商品金额和数量的正负需与本次开票金额一致。';if(message){$('#reg-picker-error').textContent=o.code.split(' / ')[0]+'：'+message;return;}}
+ const changed=JSON.stringify(form.orders)!==JSON.stringify(pickerOrders);
+ form.orders=JSON.parse(JSON.stringify(pickerOrders));if(changed)syncApportion();drawOrders();hidePicker();$('#message').textContent='';
+ };
+ $('#reg-orders').onclick=e=>{const remove=e.target.closest('[data-remove]'),edit=e.target.closest('[data-edit-order]');if(remove){form.orders.splice(Number(remove.dataset.remove),1);syncApportion();drawOrders();}else if(edit)openPicker();};
+ function apportionTotal(){return apportionDraft.filter(s=>s.checked).reduce((sum,s)=>sum+Math.round(Number(s.amount||0)*100),0);}
+ function apportionSummary(){const sum=apportionTotal();$('#reg-apportion-total').textContent='已分摊金额：'+money(sum/100)+' / '+money(total());}
+ $('#reg-apportion-open').onclick=()=>{if(!form.orders.length)return;apportionDraft=salesmen.map(s=>({...s,checked:form.apportion.some(x=>x.name===s.name),amount:form.apportion.find(x=>x.name===s.name)?.amount||0}));$('#reg-apportion-rows').innerHTML=apportionDraft.map((s,i)=>'<tr><td><input aria-label="选择'+esc(s.name)+'" type="checkbox" data-apportion-check="'+i+'" '+(s.checked?'checked':'')+'></td><td>'+String(i+1).padStart(2,'0')+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.dept)+'</td><td><input aria-label="'+esc(s.name)+'分摊金额" type="number" step="0.01" data-apportion-amount="'+i+'" value="'+s.amount+'"></td></tr>').join('');$('#reg-apportion-error').textContent='';$('#reg-apportion').hidden=false;apportionSummary();};
+ $('#reg-apportion-rows').oninput=e=>{const i=e.target.dataset.apportionAmount;if(i!==undefined){const s=apportionDraft[Number(i)];s.amount=e.target.value;s.checked=!!Number(s.amount);const check=document.querySelector('[data-apportion-check="'+i+'"]');if(check)check.checked=s.checked;apportionSummary();}};
+ $('#reg-apportion-rows').onchange=e=>{const i=e.target.dataset.apportionCheck;if(i!==undefined){apportionDraft[Number(i)].checked=e.target.checked;apportionSummary();}};
+ $('#reg-apportion-close').onclick=$('#reg-apportion-cancel').onclick=()=>{$('#reg-apportion').hidden=true;};
+ $('#reg-apportion-confirm').onclick=()=>{const chosen=apportionDraft.filter(s=>s.checked);if(chosen.some(s=>!Number.isFinite(Number(s.amount))||!Number(s.amount)||!/^-?[0-9]+(?:\.[0-9]{1,2})?$/.test(String(s.amount)))){$('#reg-apportion-error').textContent='请填写正确的分摊金额，最多保留两位小数。';return;}if(apportionTotal()!==Math.round(total()*100)){$('#reg-apportion-error').textContent='已分摊总金额不等于可分摊金额。';return;}form.apportion=chosen.map(({name,dept,amount})=>({name,dept,amount:Number(amount)}));renderApportion();$('#reg-apportion').hidden=true;};
+ function snapshot(){return {number:form.number,supplier:form.supplier,remark:form.remark,agent:$('#reg-agent').value,category:form.category,attachments:Array.from($('#reg-attachments').files||[]).map(f=>f.name),cards:[{...form,seller:form.rawSeller||form.supplier,file:form.file?.name,url:form.url,orders:form.orders.map(o=>({...o})),invoiceStockSalesmanDTOS:form.apportion.map(s=>({...s}))}]};}
+ function save(submit,another=false){
+ read();if(!setSupplier($('#reg-supplier').value.trim()))return;
+
+ if(!form.file)return error('请上传本次发票文件。','reg-upload-first');
+ const current=invoices.find(i=>i.number===form.number);
+ if(!submit){if(current&&!current.synced&&form.face!==''&&Number.isFinite(Number(form.face))&&Number(form.face)!==0){const before=ledgerSnapshot(current);current.total=Number(form.face);recordLedgerChange(current,'票面金额更正','张石磊',before);}drafts.push(snapshot());close();render();return;}
+ if(!sellers.includes(form.supplier))return error('请搜索并选择系统供应商。','reg-supplier');
+ if(!(supplierAgents.get(form.supplier)||[]).some(person=>person.name===$('#reg-agent').value))return error('请选择该供应商对应的业务员。','reg-agent');
+ if(!/^[0-9]+$/.test(form.number))return error('请填写正确的发票号码。','reg-number');
+ if(!form.date)return error('请填写发票日期。','reg-date');
+ if(!form.type)return error('请选择票面发票类型。','reg-type');
+ if(!form.category)return error('请选择发票类别。','reg-category');
+ if(form.face===''||!Number.isFinite(Number(form.face))||Number(form.face)===0)return error('请填写整张发票的票面含税金额。','reg-face');
+ if(form.color==='红字'?Number(form.face)>=0:Number(form.face)<=0)return error('票面金额正负与是否冲红不一致。','reg-face');
+
+ if(form.category==='费用发票')return error('费用发票可保存草稿；本次原型仅演示采购订单关联提交。');
+ if(!form.orders.length)return error('请选择本次关联的订单。','reg-choose-orders');
+ if(form.orders.some(o=>!Number.isFinite(Number(o.amount))||Number(o.amount)===0||Number(o.amount)*Number(form.face)<=0))return error('订单金额必须非零，且与票面金额同为正数或同为负数。');
+ if(form.orders.some(o=>Math.abs(Number(o.amount))>Math.abs(o.available)))return error('本次订单关联金额超过订单可登记金额，请调整。');
+ if(form.apportion.reduce((sum,s)=>sum+cents(s.amount),0)!==cents(total()))return error('业务员分摊合计必须等于本次登记价税合计。','reg-apportion-open');
+ if(!form.over)return error('请填写发票超期日期。','reg-over');
+ let invoice=invoices.find(i=>i.number===form.number);const amount=total();
+ if(invoice&&invoice.seller!==form.supplier)return error('该票号已有台账，其供应商与当前选择不一致，请核对。','reg-supplier');
+ if(invoice?.otherSystem)return error('该发票已在其他系统匹配，不能继续登记。');
+ const face=invoice?.synced?Number(invoice.total):Number(form.face),used=invoice?Math.abs(amounts(invoice).matched):0,available=Math.max(0,Math.round((Math.abs(face)-used)*100)/100);
+ if(Math.abs(amount)>available)return error('发票 '+form.number+'，本次金额 '+money(amount)+'，剩余额度 '+money(face<0?-available:available)+'，超出 '+money(Math.abs(amount)-available)+'，已拦截提交。');
+ if(invoice&&!invoice.synced&&form.orders.some(o=>invoice.lines.some(l=>live(l)&&l.order===o.code))&&!confirm('重复登记提醒：同票同订单已有有效登记，是否确认本次为正常分次登记？'))return;
+ const before=invoice?ledgerSnapshot(invoice):null;
+ if(!invoice){invoice={number:form.number,seller:form.supplier,total:Number(form.face),synced:false,origin:'手工登记',lines:[]};invoices.push(invoice);}
+ if(!invoice.synced){invoice.total=Number(form.face);invoice.type=form.type||invoice.type||null;}else if(!invoice.type&&form.type)invoice.type=form.type;
+ const id='JXDJ-'+String(45130+next++),metadata=snapshot();
+ form.orders.forEach(o=>{const line=makeLine(id,o.code,Number(o.amount),'审核中','人工');line.registrationMeta=metadata;invoice.lines.push(line);});
+ recordLedgerChange(invoice,'手工登记提交','张石磊',before);
+ render();if(another){register(false,null,variant);$('#message').textContent='登记单 '+id+' 已提交审核，请录入下一张发票。';}else close();
+ }
+ if(variant==='legacy'){$('#legacy-order-amount').onclick=()=>$('#reg-choose-orders').onclick();$('#legacy-apportion').onclick=()=>$('#reg-apportion-open').onclick();$('#legacy-file-view').onclick=()=>$('#reg-file-view').onclick();}
+ if(prefill&&Number(prefill.total)<0){$('#reg-color').value='红字';$('#reg-red-flush').checked=true;form.color='红字';}
+ if(prefill?.synced){$('#reg-date').value=prefill.date||'2026-11-18';$('#reg-over').value=prefill.date||'2026-11-18';}
+ mountAmountFeedback();lookupLedger();drawOrders();supplierHint();
+ if(variant==='legacy')$('#legacy-invoice-seller').oninput=()=>{form.rawSeller=$('#legacy-invoice-seller').value;supplierHint();};
+ function loadDemoScenario(key){
+  if((form.file||form.orders.length)&&!confirm('切换场景会替换当前未保存的发票及订单信息，是否继续？'))return;
+  const sample=makeRegistrationScenario(key);if(!sample)return;
+  form.orders=[];form.apportion=[];form.rawSeller='';ledgerNumber='';ledgerRecord=null;faceLocked=false;manualFaces.clear();
+  $('#reg-number').readOnly=false;$('#reg-number').value=sample.number;$('#reg-face').value='';form.number=sample.number;
+  $('#reg-supplier').value=sample.seller;form.supplier=sample.seller;refreshAgent(sample.seller,true);
+  lookupLedger();if(!faceLocked)$('#reg-face').value=sample.face;
+  form.face=$('#reg-face').value;$('#reg-date').value='2026-11-25';$('#reg-over').value='2026-11-20';$('#reg-code').value='';$('#reg-remark').value='';$('#reg-type').value='增值税专用发票';$('#reg-category').value='采购发票';
+  $('#reg-color').value=Number(sample.face)<0?'红字':'蓝字';$('#reg-red-flush').checked=Number(sample.face)<0;form.color=$('#reg-color').value;
+  form.file=makeDemoInvoiceFile(sample.number,sample.face);form.url=URL.createObjectURL(form.file);
+  $('#reg-file-name').textContent=form.file.name+'（演示文件）';$('#reg-file-view').hidden=$('#reg-file-remove').hidden=$('#reg-file-recognize').hidden=false;$('#reg-file-recognize').disabled=false;$('#reg-upload-first').textContent='更换发票';
+  const source=catalog.find(o=>o.seller===sample.seller);if(source){const o=newOrder(source);o.amount=sample.amount;allocate(o);form.orders=[o];syncApportion();}
+  read();drawOrders();supplierHint();$('#message').textContent='';
+  $('#reg-recognition-note').hidden=!sample.warning;$('#reg-recognition-note').textContent=sample.warning||'';
+  const desc=$('#register-demo-description');desc.hidden=false;desc.parentElement.hidden=false;desc.textContent='演示场景：'+sample.description;
+  $('#content').scrollTop=0;render();
+ }
+ installRegisterScenarios(loadDemoScenario,variant);
+
+}
+
+function registrationTableLayout(markup){
+ const labels=markup.match(/<label\b[^>]*>[\s\S]*?<\/label>/g)||[];
+ function label(id){const result=labels.find(s=>s.includes('id="'+id+'"'));if(!result)throw new Error('缺少原表格字段：'+id);return result;}
+ function control(id){return label(id).replace(/^<label[^>]*>[\s\S]*?(?=<(?:input|select)\b)/,'').replace(/<\/label>$/,'');}
+ const file=markup.match(/<div class="single-file">[\s\S]*?<\/div>/)?.[0]||'';
+ const datalist=markup.match(/<datalist id="reg-suppliers">[\s\S]*?<\/datalist>/)?.[0]||'';
+ const notice=markup.match(/<div id="reg-recognition-note"[\s\S]*?<\/div>/)?.[0]||'';
+ const rest=markup.slice(markup.indexOf('<div class="single-heading single-orders-heading">'));
+ const pickerStart=rest.indexOf('<section id="reg-picker"');
+ const hiddenOrderControls=rest.slice(0,pickerStart).replace(/<div id="reg-registration-preview"[^>]*><\/div>/,''),popups=rest.slice(pickerStart);
+ const headers=['发票供应商','发票日期 *','发票超期日期 *','发票代码','发票号码 *','发票文件','票面含税金额 *','订单金额','价税合计（本次登记金额）','业务员分摊','备注','发票类型 *'];
+ const cells=['<input id="legacy-invoice-seller" placeholder="票面开票方名称" title="票面开票方名称，用于核对系统供应商">',control('reg-date'),control('reg-over'),control('reg-code'),control('reg-number'),'<span id="legacy-file-name">—</span> <button id="legacy-file-view" class="link" hidden>查看</button>',control('reg-face'),'<button id="legacy-order-amount" class="link" title="点击订单金额，关联或修改订单">¥0.00</button>','<span id="legacy-invoice-total">¥0.00</span>','<button id="legacy-apportion" class="link" disabled>—</button>',control('reg-remark'),control('reg-type')];
+ const ledgerSummary=markup.match(/<div id="reg-ledger-summary"[^>]*><\/div>/)?.[0]||'';
+ const preview=markup.match(/<div id="reg-registration-preview"[^>]*><\/div>/)?.[0]||'';
+ const basic='<div class="single-heading"><strong>登记信息</strong></div><div class="single-form registration-basic-fields">'+label('reg-supplier').replace('供应商／开票方','供应商')+label('reg-agent')+label('reg-category')+label('reg-red-flush')+'</div>';
+ return '<div class="legacy-registration">'+file+basic+'<div class="single-other registration-attachments">'+label('reg-attachments')+'</div>'+datalist+notice+'<div class="single-heading"><strong>发票明细</strong></div>'+ledgerSummary+'<div class="legacy-invoice-scroll"><table class="small-table legacy-invoice-table"><thead><tr>'+headers.map(s=>'<th>'+s+(s.startsWith('价税合计')?registrationAmountHelp():'')+'</th>').join('')+'</tr></thead><tbody><tr>'+cells.map(s=>'<td>'+s+'</td>').join('')+'</tr></tbody></table></div>'+preview+'<div class="legacy-order-controls" hidden>'+hiddenOrderControls+'</div>'+popups+'</div>';
 }
 
 function orderDetail(invoice,order){
@@ -279,7 +665,7 @@ function orderDetail(invoice,order){
 }
 function excessDetail(invoice){
  const a=amounts(invoice),active=invoice.lines.filter(live);
- open('登记超额明细','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>金蝶票面含税金额：'+money(invoice.total)+'</div><div>累计登记金额：'+money(a.matched+a.pending)+'</div><div class="warning">超出金额：'+money(a.excess)+'</div></div><p>以下为该票全部有效登记，请核对需要处理的登记明细。</p><table class="small-table"><tr><th>登记单号</th><th>采购订单号</th><th>登记含税金额</th><th>登记状态</th></tr>'+active.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td><button class="link" data-order="'+l.order+'" data-invoice="'+invoice.number+'">'+l.order.split(' / ')[0]+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table><p class="subtle">超额为整票合计差额，未自动指定某一条登记为错误明细。</p>');
+ open('登记超额明细','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>金蝶票面含税金额：'+money(invoice.total)+'</div><div>已匹配金额：'+money(a.matched)+'</div><div class="warning">超出金额：'+money(a.excess)+'</div></div><p>以下为该票全部有效登记，请核对需要处理的登记明细。</p><table class="small-table"><tr><th>登记单号</th><th>采购订单号</th><th>登记含税金额</th><th>登记状态</th></tr>'+active.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td><button class="link" data-order="'+l.order+'" data-invoice="'+invoice.number+'">'+l.order.split(' / ')[0]+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table><p class="subtle">超额为整票合计差额，未自动指定某一条登记为错误明细。</p>');
 }
 function redDetail(invoice){
  open('红冲原因','<p>发票号码：'+invoice.number+'</p>'+(invoice.redForms||[]).map(form=>'<p style="padding:16px;background:#f6f8fb">'+form.reason+'</p>').join(''));
@@ -287,17 +673,17 @@ function redDetail(invoice){
 function invoiceDetail(invoice){
  const a=amounts(invoice);
  const fields=[
- ['发票号码',invoice.number],['发票类型','增值税专用发票'],['来源',invoice.origin],
- ['蓝/红','蓝字发票'],['发票状态',invoice.redForms?'部分红冲':'正常'],['匹配状态',status(invoice)],
+ ['发票号码',invoice.number],['发票类型',invoice.type||'—'],['来源',invoice.origin],
+ ['蓝/红',Number(invoice.total)<0?'红字发票':'蓝字发票'],['发票状态',invoice.redForms?'部分红冲':'正常'],['匹配状态',status(invoice)],
  ['发票金额（未税）','—'],['发票税额','—'],['价税合计',money(invoice.total)],
- ['已匹配金额',money(a.matched)],['未匹配金额',invoice.synced?money(Math.max(0,invoice.total-a.matched)):'—'],
+ ['已匹配金额',money(a.matched)],['未匹配金额',a.unmatched===null?'—':money(a.unmatched)],
  ['开票方名称',invoice.seller],['开票方统一社会信用代码/纳税人识别号','—'],
  ['购买方名称','示例采购公司'],['购买方统一社会信用代码/纳税人识别号','—'],['开票人','—'],['开票日期','2026-11-18'],
  ['认证状态','待认证'],['认证日期','—'],['做账状态','未生成'],['勾选认证时间','—'],
  ['PDF文件','—'],['OFD文件','—'],['XML文件','—'],['发票链接','—'],['备注','—'],
  ['金蝶采集状态',invoice.synced?'已采集':'待采集'],['台账建档来源',invoice.origin],['红冲原因',(invoice.redForms||[]).map(form=>form.reason).join('；')||'—']
  ];
- open('进项发票详情',(a.excess?'<div style="padding:14px;background:#fff2f0;border:1px solid #ffccc7;color:#b83c32">登记超额 '+money(a.excess)+' ｜ 票面含税金额 '+money(invoice.total)+' ｜ 累计有效登记 '+money(a.matched+a.pending)+'。请在关联登记明细中核对。</div>':'')+'<div class="invoice-grid">'+fields.map(([name,value])=>'<div><small>'+name+'</small>'+value+'</div>').join('')+'</div><div class="tabbar"><button id="goods-tab">商品明细</button><button id="register-tab">关联进项登记单详情</button><button id="orders-tab">关联订单详情</button></div><div id="invoice-tab-content"></div>');
+ open('进项发票详情',(a.excess?'<div style="padding:14px;background:#fff2f0;border:1px solid #ffccc7;color:#b83c32">登记超额 '+money(a.excess)+' ｜ 票面含税金额 '+money(invoice.total)+' ｜ 已匹配金额 '+money(a.matched)+'。请在关联登记明细中核对。</div>':'')+'<div class="invoice-grid">'+fields.map(([name,value])=>'<div><small>'+name+'</small>'+value+'</div>').join('')+'</div><div class="tabbar"><button id="goods-tab">商品明细</button><button id="register-tab">关联进项登记单详情</button><button id="orders-tab">关联订单详情</button></div><div id="invoice-tab-content"></div>');
  const tab=$('#invoice-tab-content');
  $('#goods-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>商品名称</th><th>规格型号</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th><th>税率</th><th>税额</th></tr><tr><td>设备及配件（示例）</td><td>—</td><td>件</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></table>';};
  $('#register-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>单据编号</th><th>供应商</th><th>业务员</th><th>发票状态</th><th>总金额</th><th>登记人</th><th>登记时间</th></tr>'+[...new Set(invoice.lines.map(line=>line.id))].map(id=>{
@@ -308,40 +694,25 @@ function invoiceDetail(invoice){
 
  if(a.excess)$('#register-tab').onclick();else $('#goods-tab').onclick();
 }
-function ledgerHistory(invoice){
+function ledgerSnapshot(invoice){
  const a=amounts(invoice);
- const current=invoice.synced?(a.excess?'<span class="warning">登记超额 '+money(a.excess)+'</span>':'<span class="status-success">未超额</span>'):'待采集，暂无法判断超额';
- const total=a.matched+a.pending;
- const ids=[...new Set(invoice.lines.map(line=>line.id))];
- const first=ids[0]||'—';
- const logs=[
- {time:'2026-11-18 09:30',actor:invoice.origin==='手工登记'?'张石磊':'系统',action:'台账建档',change:'建档来源：空 → '+invoice.origin+'\n发票号码：空 → '+invoice.number}
- ];
- if(invoice.lines.length){
- logs.push({time:'2026-11-18 10:00',actor:'张石磊',action:'人工登记提交审核',change:'关联登记单：'+ids.join('、')+'\n新增登记关联含税金额：'+money(total)+'\n登记状态：草稿 → 审核中'});
- logs.push({time:'2026-11-18 11:00',actor:'李敏',action:'登记审核通过',change:'关联登记单：'+first+'\n登记状态：审核中 → 待确认'});
- }
- if(a.matched)logs.push({time:'2026-11-18 14:00',actor:'李敏',action:'登记确认完成',change:'关联登记单：'+ids.filter(id=>invoice.lines.some(line=>line.id===id&&settled(line))).join('、')+'\n登记状态：待确认 → 完成\n已匹配金额：'+money(0)+' → '+money(a.matched)+'\n匹配状态：登记处理中 → '+(invoice.synced?status(invoice):'已匹配（人工）')});
- if(invoice.synced)logs.push({time:'2026-11-19 09:00',actor:'系统',action:'系统采集',change:'票面含税金额：'+(invoice.origin==='手工登记'?money(invoice.total+a.excess):'空')+' → '+money(invoice.total)+'\n采集状态：待采集 → 已采集'+(a.excess?'\n登记超额：无 → 超额 '+money(a.excess):'')});
- invoice.lines.filter(line=>['退回','报损','作废'].includes(line.state)).forEach(line=>logs.push({time:'2026-11-19 10:00',actor:'李敏',action:line.state,change:'关联登记单：'+line.id+'；订单：'+line.order+'\n登记状态：完成 → '+line.state+'\n已匹配金额：'+money(a.matched+line.amount)+' → '+money(a.matched)+'\n解除有效关联含税金额：'+money(line.amount)}));
- if(invoice.synced){
- logs.push({time:'2026-11-19 11:00',actor:'系统',action:'认证同步',change:'认证状态：未获取 → 待认证'});
- logs.push({time:'2026-11-19 11:05',actor:'系统',action:'做账同步',change:'做账状态：未获取 → 未生成'});
- }
- logs.sort((x,y)=>y.time.localeCompare(x.time));
- open('台账变更记录','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>开票方名称：'+invoice.seller+'</div><div>金蝶采集状态：'+(invoice.synced?'已采集':'待采集')+'</div><div>票面含税金额：'+(invoice.synced?money(invoice.total):'待采集')+'</div><div>已匹配金额：'+money(a.matched)+'</div><div>处理中金额：'+money(a.pending)+'</div><div>累计有效登记金额：'+money(a.matched+a.pending)+'</div><div>登记超额情况：'+current+'</div></div><div id="history-content"></div><p class="subtle">日志为格式演示，实际应按真实操作逐次保存；顶部金额与当前台账同步。</p>');
- function renderLogs(){
- const shown=logs;
- function links(change){
- return change.replace(/JXDJ-\d+/g,code=>'<button class="link" data-line="'+code+'" data-invoice="'+invoice.number+'">'+code+'</button>')
- .replace(/PO-\d+(?: \/ \d+)?/g,code=>{
- const line=invoice.lines.find(item=>item.order===code||item.order.split(' / ')[0]===code);
- return line?'<button class="link" data-order="'+line.order+'" data-invoice="'+invoice.number+'">'+code+'</button>':code;
- });
- }
- $('#history-content').innerHTML='<table class="small-table"><tr><th>时间</th><th>操作人</th><th>操作</th><th>变更摘要</th></tr>'+shown.map(log=>'<tr><td>'+log.time+'</td><td>'+log.actor+'</td><td>'+log.action+'</td><td style="white-space:pre-line;min-width:420px;line-height:1.9">'+links(log.change)+'</td></tr>').join('')+'</table><p class="subtle">'+(shown.length?'共 '+shown.length+' 条记录':'没有符合条件的变更记录')+'</p>';
- }
- renderLogs();
+ return {number:invoice.number,type:invoice.type||null,face:invoice.total,synced:invoice.synced,matched:a.matched,unmatched:a.unmatched,excess:a.excess,status:status(invoice),otherSystem:!!invoice.otherSystem,lines:invoice.lines.map(l=>({id:l.id,order:l.order,amount:l.amount,state:l.state}))};
+}
+function recordLedgerChange(invoice,action,actor,before){
+ const after=ledgerSnapshot(invoice);if(JSON.stringify(before)===JSON.stringify(after))return;
+ const changes=[];const show=v=>v===null||v===undefined?'—':money(v);
+ if(!before)changes.push('台账：无 → 新建；发票号码：'+invoice.number,'台账来源：'+invoice.origin);
+ if(before?.type!==after.type&&after.type)changes.push('发票类型：'+(before?.type||'空')+' → '+after.type);
+ const fields=[['face','票面含税金额'],['matched','已匹配金额'],['unmatched','未匹配金额'],['excess','登记超额']];
+ for(const [key,label]of fields)if(before?.[key]!==after[key])changes.push(label+'：'+show(before?.[key])+' → '+show(after[key]));
+ if(before?.synced!==after.synced)changes.push('采集状态：'+(before?(before.synced?'已采集':'待采集'):'空')+' → '+(after.synced?'已采集':'待采集'));
+ if(before?.status!==after.status)changes.push('匹配状态：'+(before?.status||'空')+' → '+after.status);
+ for(const line of after.lines){const old=before?.lines.find(l=>l.id===line.id&&l.order===line.order);if(!old)changes.push('新增登记：'+line.id+'；'+(line.order?'订单：'+line.order+'；':'商品登记；')+'本次金额：'+money(line.amount)+'；状态：'+line.state);else if(old.state!==line.state)changes.push('登记：'+line.id+'；处理结果：'+old.state+' → '+line.state);}
+ (invoice.events??=[]).push({time:new Date().toLocaleString('zh-CN',{hour12:false}),actor,action,change:changes.join('\n')});
+}
+function ledgerHistory(invoice){
+ const a=amounts(invoice),esc=registerEscape;
+ open('台账变更记录','<div class="fields"><div>发票号码：'+esc(invoice.number)+'</div><div>开票方名称：'+esc(invoice.seller)+'</div><div>采集状态：'+(invoice.synced?'已采集':'待采集')+'</div><div>票面含税金额：'+(hasFace(invoice)?money(invoice.total):'—')+'</div><div>已匹配金额：'+money(a.matched)+'</div><div>未匹配金额：'+(a.unmatched===null?'—':money(a.unmatched))+'</div><div>登记超额：'+(!hasFace(invoice)?'票面金额待补齐，暂无法判断':a.excess?'<span class="warning">超额 '+money(a.excess)+'</span>':'未超额')+'</div></div><div class="scroll"><table class="small-table"><thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>变更摘要</th></tr></thead><tbody>'+[...(invoice.events||[])].reverse().map(e=>'<tr><td>'+esc(e.time)+'</td><td>'+esc(e.actor)+'</td><td>'+esc(e.action)+'</td><td style="white-space:pre-line;min-width:440px">'+esc(e.change)+'</td></tr>').join('')+'</tbody></table></div>');
 }
 
 function linkedClick(event){
@@ -350,15 +721,14 @@ function linkedClick(event){
  if(data.ledgerHistory)ledgerHistory(invoices.find(i=>i.number===data.ledgerHistory));
  if(data.match){
  const invoice=invoices.find(i=>i.number===data.match);
- register();$('#title').textContent='手动匹配 · 进项发票登记';
- $('#number').value=invoice.number;$('#number').readOnly=true;$('#seller').value=invoice.seller;
+ register(false,invoice);
  }
  if(data.other){
  const invoice=invoices.find(i=>i.number===data.other);
  open('标记为其他系统匹配','<p>请确认该发票已在其他系统完成业务匹配。标记后，当前系统不能继续关联登记和订单。</p>',[{label:'确认标记',primary:true,action:()=>{
  const amount=amounts(invoice);
- if(amount.matched||amount.pending){$('#message').textContent='发票已有登记，无法标记为其他系统匹配。';return;}
- invoice.otherSystem=true;render();close();
+ if(amount.matched){$('#message').textContent='发票已有登记，无法标记为其他系统匹配。';return;}
+ const before=ledgerSnapshot(invoice);invoice.otherSystem=true;recordLedgerChange(invoice,'标记为其他系统匹配','张石磊',before);render();close();
  }}]);
  }
  if(data.excess)invoiceDetail(invoices.find(i=>i.number===data.excess));
@@ -370,14 +740,17 @@ function linkedClick(event){
 
 $('#ledger').onclick=linkedClick;
 $('#content').onclick=linkedClick;
-$('#register').onclick=$('#nav-register').onclick=()=>register();
-$('#batch').onclick=$('#nav-batch').onclick=()=>register(true);
+$('#register').onclick=$('#nav-register').onclick=()=>showRegistrationPage();
+$('#nav-ledger').onclick=()=>showRegistrationPage(false);
+$('#batch').onclick=$('#nav-batch').onclick=()=>selectInvoiceTab('batch');
+$('#nav-handle').onclick=()=>selectInvoiceTab('handle');
+$('#invoice-manage-menu').onclick=()=>selectInvoiceTab('ledger');
 $('#sync').onclick=()=>{
  const pending=invoices.filter(i=>!i.synced);
  if(!pending.length){open('金蝶拉取','<p>当前示例已全部采集，不重复生成登记单。</p>');return;}
- open('金蝶拉取演示','<div class="fields"><label>待采集发票<select id="sync-number">'+pending.map(i=>'<option>'+i.number+'</option>').join('')+'</select></label><label>金蝶票面含税金额<input id="sync-total" type="number" min="0.01" step="0.01" value="900"></label></div>',[{label:'完成采集',primary:true,action:()=>{
- const amount=Number($('#sync-total').value);if(!Number.isFinite(amount)||amount<=0){$('#message').textContent='请填写正确金额';return;}
- const invoice=invoices.find(i=>i.number===$('#sync-number').value);invoice.total=amount;invoice.synced=true;render();detail(invoice);
+ open('金蝶拉取演示','<div class="fields"><label>待采集发票<select id="sync-number">'+pending.map(i=>'<option>'+i.number+'</option>').join('')+'</select></label><label>金蝶票面含税金额<input id="sync-total" type="number" step="0.01" value="900"></label></div>',[{label:'完成采集',primary:true,action:()=>{
+ const amount=Number($('#sync-total').value);if(!Number.isFinite(amount)||amount===0){$('#message').textContent='请填写正确金额';return;}
+ const invoice=invoices.find(i=>i.number===$('#sync-number').value);collectInvoice(invoice,amount);render();invoiceDetail(invoice);
  }}]);
 };
 
@@ -405,4 +778,335 @@ $('#reset-filters').onclick=()=>{
 for(const selector of ['#search','#purchase','#expense'])$(selector).addEventListener('input',render);
 
 render();
+
+const registerEscape=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let registrationScope='进行中',registrationRows=[];
+function selectInvoiceTab(tab){
+ const entries=[['ledger','ledger-page','nav-ledger'],['register','registration-page','nav-register'],['batch','batch-registration-page','nav-batch'],['handle','invoice-handle-page','nav-handle']];
+ for(const [key,panel,id]of entries){const active=tab===key;$('#'+panel).hidden=!active;$('#'+id).classList.toggle('active',active);$('#'+id).setAttribute('aria-selected',String(active));}
+ if(tab==='register')renderRegistrationList();
+}
+function showRegistrationPage(show=true){selectInvoiceTab(show?'register':'ledger');}
+
+function renderRegistrationList(){
+ const grouped=new Map();
+ invoices.forEach(invoice=>invoice.lines.forEach(line=>{if(!grouped.has(line.id))grouped.set(line.id,{id:line.id,seller:invoice.seller,lines:[],state:'',source:line.source==='系统'?'系统匹配':'人工登记'});grouped.get(line.id).lines.push({invoice,line});}));
+ registrationRows=[...grouped.values()].map(row=>{const states=row.lines.map(x=>x.line.state);row.state=registrationDocumentState(states);if(row.state==='审核中')row.state='审批中';if(row.state==='退回')row.state='已退回';row.amount=row.lines.reduce((s,x)=>s+x.line.amount,0);return row;});
+ drafts.forEach((draft,i)=>registrationRows.push({id:'草稿-'+String(i+1).padStart(3,'0'),seller:draft.supplier||draft.seller||'—',state:'草稿',source:'人工登记',draft,amount:(draft.cards||[]).reduce((s,c)=>s+c.orders.reduce((n,o)=>n+Number(o.amount||0),0),0)}));
+ const key=$('#registration-search').value.trim();const visible=registrationRows.filter(r=>(!key||r.id.includes(key))&&(registrationScope==='所有'||registrationScope==='草稿'&&r.state==='草稿'||registrationScope==='完成'&&r.state==='完成'||registrationScope==='进行中'&&['审批中','待确认'].includes(r.state)));
+ $('#registration-rows').innerHTML=visible.map((r,i)=>'<tr data-registration="'+registerEscape(r.id)+'"><td><input type="checkbox" aria-label="选择'+registerEscape(r.id)+'"></td><td>'+String(i+1).padStart(2,'0')+'</td><td><button class="link" data-registration-detail="'+registerEscape(r.id)+'">详情</button></td><td>'+registerEscape(r.id)+'</td><td>'+registerEscape(r.seller)+'</td><td>—</td><td class="'+(r.state==='完成'?'status-success':r.state==='审批中'?'line-state pending':'status-progress')+'">'+r.state+'</td><td>'+r.source+'</td><td>采购发票</td><td>—</td><td class="money">'+money(r.amount)+'</td><td>—</td><td>—</td><td>'+registerEscape(r.draft?.remark||'—')+'</td><td>—</td></tr>').join('')||'<tr><td colspan="15" style="text-align:center;padding:36px;color:#8592a1">暂无对应登记单</td></tr>';
+ $('#registration-count').textContent='共 '+visible.length+' 条登记单（演示数据）；未提供的原始字段显示“—”。';
+ $('#registration-current').textContent='选择登记单，查看发票明细。';
+}
+$('#registration-create').onclick=()=>register();
+$('#registration-create-new').onclick=()=>register(false,null,'new');
+$('#registration-pull').onclick=()=>$('#sync').onclick();
+$('#registration-search').oninput=renderRegistrationList;
+document.querySelectorAll('[name="registration-scope"]').forEach(el=>el.onchange=()=>{registrationScope=el.value;renderRegistrationList();});
+$('#registration-all').onchange=e=>document.querySelectorAll('#registration-rows input[type="checkbox"]').forEach(el=>el.checked=e.target.checked);
+$('#registration-rows').onclick=e=>{
+ const tr=e.target.closest('[data-registration]');if(!tr)return;
+ const r=registrationRows.find(x=>x.id===tr.dataset.registration);if(!r)return;
+ const header=['发票单位','发票代码','发票号码','总金额','是否新做账方式','业务员分摊','税额','价税合计','发票日期','发票超期日期','备注'];
+ const lines=r.lines||[];$('#registration-current').innerHTML='<div style="padding:10px;color:#2687d6">发票明细 · '+registerEscape(r.id)+'</div><div class="scroll"><table class="small-table"><tr>'+header.map(x=>'<th>'+x+'</th>').join('')+'</tr>'+lines.map(({invoice,line})=>'<tr><td>'+registerEscape(invoice.seller)+'</td><td>—</td><td>'+invoice.number+'</td><td>—</td><td>—</td><td>—</td><td>—</td><td>'+money(line.amount)+'</td><td>—</td><td>—</td><td>—</td></tr>').join('')+'</table></div>';
+ if(e.target.dataset.registrationDetail){if(r.draft)open('草稿详情','<p>供应商：'+registerEscape(r.seller)+'</p><p>本次登记金额：'+money(r.amount)+'</p><p class="subtle">草稿尚未建档或占用台账金额。草稿恢复编辑待后续完善。</p>');else registrationDetail(lines[0].invoice,r.id);}
+};
+const originalRegistrationRender=render;
+render=function(){originalRegistrationRender();if(!$('#registration-page').hidden)renderRegistrationList();};
+
+
+/* invoice-tooltip-start */
+function installInvoiceTooltips(){
+ const tooltip=document.createElement('div');tooltip.id='invoice-tooltip';tooltip.setAttribute('role','tooltip');tooltip.hidden=true;document.body.appendChild(tooltip);
+ let anchor=null;
+ function hide(){if(anchor)anchor.removeAttribute('aria-describedby');anchor=null;tooltip.hidden=true;}
+ function show(target){
+ if(!target?.dataset.tooltip){hide();return;}
+ const host=target.closest('dialog[open]')||document.body;if(tooltip.parentElement!==host)host.appendChild(tooltip);
+ if(anchor&&anchor!==target)anchor.removeAttribute('aria-describedby');anchor=target;tooltip.textContent=target.dataset.tooltip;tooltip.hidden=false;target.setAttribute('aria-describedby',tooltip.id);
+ const rect=target.getBoundingClientRect(),box=tooltip.getBoundingClientRect();
+ const left=Math.max(12,Math.min(rect.left,window.innerWidth-box.width-12));
+ const top=rect.bottom+8+box.height<window.innerHeight-12?rect.bottom+8:Math.max(12,rect.top-box.height-8);
+ tooltip.style.left=left+'px';tooltip.style.top=top+'px';
+ }
+ document.addEventListener('pointerover',event=>show(event.target.closest?.('[data-tooltip]')));
+ document.addEventListener('pointerout',event=>{const target=event.target.closest?.('[data-tooltip]');if(target&&!target.contains(event.relatedTarget))hide();});
+ document.addEventListener('focusin',event=>show(event.target.closest?.('[data-tooltip]')));
+ document.addEventListener('focusout',event=>{if(event.target.closest?.('[data-tooltip]'))hide();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')hide();});
+ window.addEventListener('scroll',hide,true);window.addEventListener('resize',hide);
+}
+installInvoiceTooltips();
+
+/* invoice-tooltip-end */
+// All sample data and mock recognition stay in this page. Uploaded data is not transmitted.
+function registrationDocumentState(states){
+ if(states.every(s=>s===states[0]))return states[0];
+ if(states.some(s=>['退回','作废','撤销','驳回'].includes(s))&&states.some(s=>effective.includes(s)))return states.includes('退回')?'部分退回':'部分处理';
+ return states.includes('审核中')?'审核中':states.includes('待确认')?'待确认':states.every(s=>['完成','抵扣'].includes(s))?'完成':states.join('／');
+}
+function processInvoiceDetail(invoice,id,action){
+ const lines=invoice.lines.filter(l=>l.id===id),affected=lines.filter(live);
+ if(!affected.length)return;
+ const before=ledgerSnapshot(invoice);affected.forEach(l=>l.state=action);
+ invoice.needsManual=true;invoice.autoMatchBlocked=true;
+ recordLedgerChange(invoice,action,'李敏',before);render();
+}
+function collectInvoice(invoice,face){
+ const before=ledgerSnapshot(invoice),first=!invoice.synced;
+ invoice.total=face;invoice.synced=true;
+ const canAuto=first&&!invoice.lines.length&&!invoice.autoMatchBlocked&&!invoice.otherSystem;
+ if(canAuto){
+  if(invoice.autoOrder){const id='JXDJ-'+String(45130+next++);invoice.lines.push(makeLine(id,invoice.autoOrder,Number(invoice.autoAmount??face),'待确认','系统'));}
+  else invoice.needsManual=true;
+ }
+ recordLedgerChange(invoice,'系统采集','系统',before);
+}
+function recognitionPreview(form,apply){
+ const overlay=document.createElement('section');overlay.className='ocr-preview';overlay.style='position:fixed;inset:12% 8% 15% 15%;z-index:200;background:white;border:1px solid #bad0e4;box-shadow:0 12px 50px #3455;padding:24px;overflow:auto';
+ const esc=registerEscape;
+ overlay.innerHTML='<h3>识别交互预览</h3><p>此处填写模拟返回值，仅用于演示回填和金额核对；尚未接入真实AI识别。</p><div class="fields"><label>发票号码<input data-ocr="number" value="'+esc(form.number||'26312000000000861353')+'"></label><label>销售方名称<input data-ocr="seller" value="'+esc(form.supplier||'上海华兴科技有限公司')+'"></label><label>票面含税金额<input data-ocr="face" type="number" value="'+esc(form.face||1000)+'"></label><label>开票日期<input data-ocr="date" type="date" value="2026-11-25"></label><label>发票代码<input data-ocr="code" value=""></label><label>发票类型<select data-ocr="type"><option>增值税专用发票</option><option>增值税普通发票</option></select></label><label>红字信息<select data-ocr="color"><option>蓝字</option><option>红字</option></select></label></div><div class="actions"><button data-cancel>取消</button><button class="primary" data-apply>应用模拟识别结果</button></div>';
+ $('#dialog').append(overlay);overlay.querySelector('[data-cancel]').onclick=()=>overlay.remove();overlay.querySelector('[data-apply]').onclick=()=>{const data={};overlay.querySelectorAll('[data-ocr]').forEach(el=>data[el.dataset.ocr]=el.value);overlay.remove();apply(data);};
+}
+function showBatchProducts(c,id,back){
+ const rows=c.products.map(p=>'<tr><td>'+batchEsc(p.name)+'</td><td>'+p.qty+'</td><td>'+money(p.gross)+'</td><td>'+p.rate+'%</td><td>'+money(p.gross-p.gross/(1+p.rate/100))+'</td></tr>').join('');
+ open('登记商品明细','<p>登记单：'+batchEsc(id)+'　发票号码：'+batchEsc(c.number)+'</p><table class="small-table"><tr><th>商品名称</th><th>数量</th><th>含税金额</th><th>税率</th><th>税额</th></tr>'+rows+'</table>',[{label:'返回登记详情',action:back}]);
+}
+function installDetailActions(invoice,id){
+ const groups=[...new Set(invoices.filter(i=>i.lines.some(l=>l.id===id)).map(i=>i.number))];
+ const bar=document.createElement('div');bar.className='detail-processing';bar.style='display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding-top:20px';
+ bar.innerHTML='<label>选择发票明细 <select id="process-invoice">'+groups.map(n=>'<option>'+n+'</option>').join('')+'</select></label><span id="process-result"></span><button id="process-history">查看该票变更记录</button>';
+ $('#content').append(bar);const select=bar.querySelector('select');select.value=invoice.number;
+ function draw(){bar.querySelectorAll('[data-process]').forEach(b=>b.remove());const i=invoices.find(i=>i.number===select.value),lines=i.lines.filter(l=>l.id===id),active=lines.some(live),states=[...new Set(lines.map(l=>l.state))];$('#process-result').textContent='处理结果：'+states.join('、');
+  const actions=active?['审核通过','确认完成','退回','驳回','作废','撤销']:states.some(s=>['驳回','作废','撤销'].includes(s))?['重新提交']:[];
+  for(const action of actions){if(action==='审核通过'&&!states.includes('审核中')||action==='确认完成'&&!states.includes('待确认'))continue;const b=document.createElement('button');b.dataset.process=action;b.textContent=action;bar.append(b);b.onclick=()=>{
+   if(action==='重新提交'){resubmitDetail(i,id);return;}
+   if(['审核通过','确认完成'].includes(action)){const before=ledgerSnapshot(i);lines.filter(live).forEach(l=>l.state=action==='审核通过'?'待确认':'完成');recordLedgerChange(i,action,'李敏',before);render();}
+   else processInvoiceDetail(i,id,action);
+   registrationDetail(i,id);
+  };}
+ }
+ select.onchange=draw;$('#process-history').onclick=()=>ledgerHistory(invoices.find(i=>i.number===select.value));draw();
+}
+function resubmitDetail(invoice,id){
+ const lines=invoice.lines.filter(l=>l.id===id),sum=lines.reduce((s,l)=>s+l.amount,0),meta=lines[0].registrationMeta;
+ open('重新提交登记','<p>原登记金额已释放，重新提交需按最新额度校验。退回的明细不支持重新提交，应重新登记。</p><div class="fields"><label>本次登记金额<input id="resubmit-amount" type="number" value="'+sum+'" step="0.01"></label><label>发票文件<input id="resubmit-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.ofd,.xml"></label></div>',[{label:'取消',action:()=>registrationDetail(invoice,id)},{label:'重新提交',primary:true,action:()=>{
+  const value=Number($('#resubmit-amount').value),file=$('#resubmit-file').files[0],a=amounts(invoice);
+  if(!file){$('#message').textContent='请上传本次发票文件。';return;}
+  if(!Number.isFinite(value)||!value||value*Number(invoice.total)<=0||a.unmatched===null||Math.abs(value)>Math.abs(a.unmatched)||invoice.otherSystem){$('#message').textContent='本次金额正负不正确或超过最新剩余额度。';return;}
+  const before=ledgerSnapshot(invoice);let used=0;
+  lines.forEach((l,index)=>{const amount=index===lines.length-1?Math.round((value-used)*100)/100:Math.round(value*(sum?l.amount/sum:1/lines.length)*100)/100;used+=amount;l.amount=amount;l.state='审核中';});
+  if(meta){const c=meta.cards.find(c=>c.number===invoice.number);if(c){c.file=file.name;c.url=URL.createObjectURL(file);const scale=sum?value/sum:1;if(c.orders){c.orders.forEach(o=>{o.amount=Math.round(o.amount*scale*100)/100;o.products?.forEach(p=>{p.gross=Math.round(p.gross*scale*100)/100;p.qty=Number((p.qty*scale).toFixed(8));});});}if(c.products)c.products.forEach(p=>{p.gross=Math.round(p.gross*scale*100)/100;p.qty=Number((p.qty*scale).toFixed(8));});const split=c.invoiceStockSalesmanDTOS||c.apportion;if(split)split.forEach(s=>s.amount=Math.round(s.amount*scale*100)/100);}}
+  recordLedgerChange(invoice,'重新提交','张石磊',before);render();registrationDetail(invoice,id);
+ }}]);
+}
+function renderHandlePage(){
+ const panel=$('#invoice-handle-page');
+ const rows=invoices.flatMap(invoice=>[...new Set(invoice.lines.map(l=>l.id))].map(id=>{const lines=invoice.lines.filter(l=>l.id===id);return {invoice,id,lines};}));
+ panel.innerHTML='<section class="toolbar"><h1>进项发票处理</h1><span>按发票明细选择处理，退回整条释放；同单其他发票不受影响</span></section><div class="scroll"><table class="small-table"><thead><tr><th>选择</th><th>登记单号</th><th>发票号码</th><th>登记金额</th><th>处理结果</th><th>操作</th></tr></thead><tbody>'+rows.map(({invoice,id,lines},n)=>'<tr><td><input type="checkbox" data-handle-row="'+n+'"></td><td>'+id+'</td><td>'+invoice.number+'</td><td>'+money(lines.reduce((s,l)=>s+l.amount,0))+'</td><td>'+[...new Set(lines.map(l=>l.state))].join('、')+'</td><td><button class="link" data-handle-detail="'+n+'">详情</button></td></tr>').join('')+'</tbody></table></div><div id="handle-message" role="status" style="padding:14px"></div><div class="actions" style="padding:18px">'+['退回','驳回','作废','撤销'].map(a=>'<button data-handle-action="'+a+'">'+a+'</button>').join('')+'</div>';
+ panel.querySelectorAll('[data-handle-detail]').forEach(b=>b.onclick=()=>{const r=rows[Number(b.dataset.handleDetail)];registrationDetail(r.invoice,r.id);});
+ panel.querySelectorAll('[data-handle-action]').forEach(b=>b.onclick=()=>{const selected=[...panel.querySelectorAll('[data-handle-row]:checked')].map(el=>rows[Number(el.dataset.handleRow)]);if(!selected.length){$('#handle-message').textContent='请先选择发票明细。';return;}if(selected.some(r=>!r.lines.some(live))){$('#handle-message').textContent='请选择尚有效的发票明细，已释放的明细不会重复处理。';return;}const total=selected.reduce((s,r)=>s+r.lines.filter(live).reduce((n,l)=>n+l.amount,0),0);if(!confirm('确认'+b.dataset.handleAction+'选中的'+selected.length+'条发票明细？将全额释放 '+money(total)+'，不影响同单其他发票。'))return;const grouped=new Map();selected.forEach(r=>{if(!grouped.has(r.invoice))grouped.set(r.invoice,[]);grouped.get(r.invoice).push(r.id);});for(const [invoice,ids]of grouped){const before=ledgerSnapshot(invoice);invoice.lines.filter(l=>ids.includes(l.id)&&live(l)).forEach(l=>l.state=b.dataset.handleAction);invoice.needsManual=true;invoice.autoMatchBlocked=true;recordLedgerChange(invoice,b.dataset.handleAction,'李敏',before);}render();renderHandlePage();$('#handle-message').textContent='处理成功，对应金额已释放，其他发票保持不变。';});
+}
+
+// Product-only batch registration: independent single-add and source import entries.
+let batchRows=[];
+const batchEsc=v=>registerEscape(v??'');
+function newBatchRow(data={}){return {key:Date.now()+Math.random(),number:'',supplier:'上海华兴科技有限公司',agent:'张石磊',category:'采购发票',face:'',date:'',over:'',file:null,url:'',products:[{name:'',qty:1,gross:0,rate:13}],...data};}
+function batchSum(row){return Math.round(row.products.reduce((s,p)=>s+Number(p.gross||0),0)*100)/100;}
+function renderBatchPage(){
+ const panel=$('#batch-registration-page');panel.innerHTML='<section class="toolbar"><h1>进项发票批量登记</h1><button id="batch-add" class="primary">＋单条新增</button><button id="batch-import">批量导入</button><button id="batch-template">下载演示导入模板</button><span>按商品金额汇总，不关联订单</span><input id="batch-source" type="file" accept=".csv" hidden></section><div id="batch-cards" style="padding:18px"></div><div style="padding:18px" id="batch-result" role="status"></div><div class="actions" style="padding:18px"><button id="batch-draft">保存草稿</button><button id="batch-submit" class="primary">保存并提交</button></div>';
+ const draftButton=document.createElement('button');draftButton.id='batch-open-drafts';draftButton.textContent='查看草稿';panel.querySelector('.toolbar').append(draftButton);draftButton.onclick=()=>open('批量登记草稿','<table class="small-table"><tr><th>草稿</th><th>发票张数</th><th>操作</th></tr>'+batchDrafts.map((group,index)=>'<tr><td>草稿 '+(index+1)+'</td><td>'+group.length+'</td><td><button class="link" data-batch-draft-open="'+index+'">继续编辑</button></td></tr>').join('')+'</table>',[{label:'关闭',action:close}]);
+ $('#batch-add').onclick=()=>{batchRows.push(newBatchRow());drawBatchCards();};
+ $('#batch-import').onclick=()=>$('#batch-source').click();
+ $('#batch-template').onclick=()=>{const text='发票号码,供应商,票面金额,开票日期,超期日期,商品名称,数量,含税金额,税率\n26312000000000861401,上海华兴科技有限公司,1000,2026-11-25,2026-11-20,设备A,2,600,13\n26312000000000861401,上海华兴科技有限公司,1000,2026-11-25,2026-11-20,配件B,1,200,13\n26312000000000861402,上海瑞丰贸易有限公司,500,2026-11-25,2026-11-25,商品C,1,300,13';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+text],{type:'text/csv;charset=utf-8'}));a.download='批量登记演示模板.csv';a.click();};
+ $('#batch-source').onchange=async e=>{const file=e.target.files[0];if(!file)return;const text=await file.text(),lines=text.replace(/^\uFEFF/,'').trim().split(/\r?\n/);if(!lines[0].includes('发票号码')){$('#batch-result').textContent='导入格式不正确，请使用演示CSV模板。';return;}const grouped=new Map();for(const line of lines.slice(1)){const n=line.split(',');if(n.length<9){$('#batch-result').textContent='文件存在字段不完整的数据，请完善后重新导入。';return;}const [number,supplier,face,date,over,name,qty,gross,rate]=n;let row=grouped.get(number);if(!row){row=newBatchRow({number,supplier,face,date,over,products:[]});grouped.set(number,row);}else if(row.supplier!==supplier||Number(row.face)!==Number(face)){$('#batch-result').textContent='同一发票号码的供应商或票面金额不一致，请核对。';return;}row.products.push({name,qty:Number(qty),gross:Number(gross),rate:Number(rate)});}batchRows.push(...grouped.values());drawBatchCards();$('#batch-result').textContent='已按票号归并 '+grouped.size+' 张发票，请逐票上传文件并核对后提交。';e.target.value='';};
+ $('#batch-draft').onclick=()=>saveBatch(false);$('#batch-submit').onclick=()=>saveBatch(true);drawBatchCards();
+}
+function drawBatchCards(){
+ $('#batch-cards').innerHTML=batchRows.length?batchRows.map((r,index)=>{const existing=invoices.find(i=>i.number===r.number),locked=existing?.synced;if(existing&&hasFace(existing)&&r.lastLookup!==r.number){r.face=existing.total;r.lastLookup=r.number;}return '<article class="batch-card" data-batch-key="'+r.key+'" style="padding:20px;margin-bottom:18px;border:1px solid #d4e0ec;border-radius:6px;background:white"><div class="single-heading"><strong>发票 '+(index+1)+' · '+(r.number||'待录入')+'</strong><button data-delete-invoice="'+r.key+'" class="link">移除</button></div><div class="fields"><label>发票号码 *<input data-batch-field="number" value="'+batchEsc(r.number)+'"></label><label>供应商 *<input data-batch-field="supplier" value="'+batchEsc(r.supplier)+'" list="batch-suppliers"></label><label>业务员 *<select data-batch-field="agent"><option '+(r.agent==='张石磊'?'selected':'')+'>张石磊</option><option '+(r.agent==='李敏'?'selected':'')+'>李敏</option></select></label><label>发票类别 *<select data-batch-field="category"><option>采购发票</option><option '+(r.category==='费用发票'?'selected':'')+'>费用发票</option></select></label><label>票面含税金额 *<input type="number" step="0.01" data-batch-field="face" value="'+batchEsc(r.face)+'" '+(locked?'readonly':'')+' title="整张发票的含税总金额，不是本次登记金额。"></label><label>开票日期 *<input type="date" data-batch-field="date" value="'+batchEsc(r.date)+'"></label><label>发票超期日期 *<input type="date" data-batch-field="over" value="'+batchEsc(r.over)+'"></label><label>发票文件 *<input type="file" data-batch-file accept=".pdf,.png,.jpg,.jpeg,.ofd,.xml"><span>'+(r.file?batchEsc(r.file.name):'未上传')+'</span>'+(r.url?'<button data-batch-view="'+r.key+'" class="link">查看</button>':'')+'</label></div><div class="scroll"><table class="small-table"><thead><tr><th>商品名称</th><th>数量</th><th>含税金额</th><th>税率</th><th>税额</th><th>操作</th></tr></thead><tbody>'+r.products.map((p,i)=>{const net=Number(p.gross)/(1+Number(p.rate)/100);return '<tr data-product-index="'+i+'"><td><input data-batch-product="name" value="'+batchEsc(p.name)+'"></td><td><input type="number" data-batch-product="qty" value="'+p.qty+'"></td><td><input type="number" step="0.01" data-batch-product="gross" value="'+p.gross+'"></td><td><input type="number" data-batch-product="rate" value="'+p.rate+'">%</td><td>'+money(Number(p.gross)-net)+'</td><td><button data-delete-product="'+i+'" class="link">移除</button></td></tr>';}).join('')+'</tbody></table></div><button data-add-product class="link">＋添加商品</button><p>价税合计（本次登记金额）：<strong>'+money(batchSum(r))+'</strong></p><p class="warning" data-batch-error></p></article>';}).join(''):'<p style="text-align:center;padding:50px;color:#74889a">暂无登记数据，请单条新增或批量导入。</p>';
+ if(!$('#batch-suppliers')){const list=document.createElement('datalist');list.id='batch-suppliers';list.innerHTML=[...new Set(invoices.map(i=>i.seller))].map(n=>'<option value="'+batchEsc(n)+'">').join('');$('#batch-cards').append(list);}
+ $('#batch-cards').querySelectorAll('[data-batch-file]').forEach(input=>{input.hidden=true;input.closest('label').style='display:flex;flex-direction:column;align-items:flex-start;gap:7px';const button=document.createElement('button');button.className='link';button.textContent=input.closest('[data-batch-key]')&&batchRows.find(r=>String(r.key)===input.closest('[data-batch-key]').dataset.batchKey)?.file?'更换发票文件':'上传发票文件';button.onclick=()=>input.click();input.before(button);});
+ $('#batch-cards').onchange=e=>{const card=e.target.closest('[data-batch-key]');if(!card)return;const r=batchRows.find(r=>String(r.key)===card.dataset.batchKey);if(e.target.dataset.batchField){const field=e.target.dataset.batchField;r[field]=e.target.value;if(field==='supplier')r.agent=r.supplier==='上海瑞丰贸易有限公司'?'李敏':'张石磊';if(field==='number'){const existing=invoices.find(i=>i.number===r.number);if(existing&&hasFace(existing))r.face=existing.total;r.lastLookup=r.number;}}if(e.target.hasAttribute('data-batch-file')){r.file=e.target.files[0]||r.file;if(r.file){if(r.url)URL.revokeObjectURL(r.url);r.url=URL.createObjectURL(r.file);}}if(e.target.dataset.batchProduct){const p=r.products[Number(e.target.closest('[data-product-index]').dataset.productIndex)],field=e.target.dataset.batchProduct;p[field]=field==='name'?e.target.value:Number(e.target.value);}drawBatchCards();$('#batch-result').textContent='';};
+ $('#batch-cards').onclick=e=>{const card=e.target.closest('[data-batch-key]');if(!card)return;const r=batchRows.find(r=>String(r.key)===card.dataset.batchKey);if(e.target.dataset.deleteInvoice){batchRows=batchRows.filter(x=>x!==r);drawBatchCards();}if(e.target.hasAttribute('data-add-product')){r.products.push({name:'',qty:1,gross:0,rate:13});drawBatchCards();}if(e.target.dataset.deleteProduct!==undefined){r.products.splice(Number(e.target.dataset.deleteProduct),1);drawBatchCards();}if(e.target.dataset.batchView&&r.url)window.open(r.url,'_blank','noopener');};
+}
+function validateBatchRow(r,submit,book){
+ if(!r.file)return '请上传本次发票文件。';if(!submit)return '';
+ const i=invoices.find(i=>i.number===r.number),face=i?.synced?i.total:Number(r.face),amount=batchSum(r);
+ if(!r.type)return '请选择发票类型，未识别时可手工选择。';
+ if(!/^\d+$/.test(r.number)||!r.supplier||!r.agent||!r.category||!r.date||!r.over)return '请完善票号、供应商、业务员、类别、开票日期和超期日期。';
+ if(!invoices.some(i=>i.seller===r.supplier))return '请选择系统已有供应商。';
+ if(r.face===''||!Number.isFinite(face)||!face)return '请填写真实的票面含税金额。';
+ if(i?.seller&&i.seller!==r.supplier)return '同票号供应商与台账不一致。';if(i?.otherSystem)return '该发票已在其他系统匹配。';
+ if(!r.products.length||r.products.some(p=>!p.name||!Number.isFinite(Number(p.qty))||!p.qty||!Number.isFinite(Number(p.gross))||!p.gross||p.gross*face<=0||p.qty*face<=0||!Number.isFinite(p.rate)||p.rate<0||p.rate>100))return '请完善商品信息，数量和金额正负须与票面一致。';
+ const earlier=book.get(r.number)||0,existing=i?Math.abs(amounts(i).matched):0,available=Math.max(0,Math.round((Math.abs(face)-existing-earlier)*100)/100);
+ if(Math.abs(amount)>available)return '发票 '+r.number+'，本次 '+money(amount)+'，剩余额度 '+money(face<0?-available:available)+'，超出 '+money(Math.abs(amount)-available)+'。';
+ if(book.has(r.number+'face')&&book.get(r.number+'face')!==face)return '本批同票号的票面金额不一致。';
+ book.set(r.number,earlier+Math.abs(amount));book.set(r.number+'face',face);return '';
+}
+function saveBatch(submit){
+ if(!batchRows.length){$('#batch-result').textContent='请先新增或导入数据。';return;}const book=new Map();let invalid=false;
+ for(const r of batchRows){const msg=validateBatchRow(r,submit,book);$('#batch-cards').querySelector('[data-batch-key="'+r.key+'"] [data-batch-error]').textContent=msg;if(msg)invalid=true;}
+ if(invalid){$('#batch-result').textContent='存在缺少信息或校验不通过的数据，请完善后再保存。当前输入已保留。';return;}
+ const touched=new Map();
+ for(const r of batchRows){let i=invoices.find(i=>i.number===r.number);const before=i?ledgerSnapshot(i):null;if(submit&&!touched.has(r.number))touched.set(r.number,before);if(!submit){if(i&&!i.synced&&r.face!==''&&Number.isFinite(Number(r.face))&&Number(r.face)){i.total=Number(r.face);recordLedgerChange(i,'票面金额更正','张石磊',before);}continue;}if(!i){i={number:r.number,seller:r.supplier,total:Number(r.face),synced:false,origin:'批量导入',lines:[]};invoices.push(i);}if(!i.synced){i.total=Number(r.face);i.type=r.type||i.type||null;}else if(!i.type&&r.type)i.type=r.type;const id='JXDJ-'+String(45130+next++),line=makeLine(id,'',batchSum(r),'审核中','人工');line.registrationMeta={supplier:r.supplier,agent:r.agent,category:r.category,attachments:[],cards:[{number:r.number,seller:r.supplier,face:Number(r.face),type:r.type||'',date:r.date,over:r.over,color:Number(r.face)<0?'红字':'蓝字',file:r.file.name,url:r.url,orders:[],products:r.products,apportion:[{name:r.agent,amount:batchSum(r)}]}]};i.lines.push(line);}
+ if(submit)for(const [number,before]of touched)recordLedgerChange(invoices.find(i=>i.number===number),'批量登记提交','张石磊',before);
+ if(!submit)batchDrafts.push(batchRows.map(r=>({...r,products:r.products.map(p=>({...p}))})));
+ const count=batchRows.length;batchRows=[];drawBatchCards();render();$('#batch-result').textContent=submit?'成功提交 '+count+' 张发票，已进入审核并关联台账。':'已保存 '+count+' 张发票的草稿，本次登记金额未计入。';
+}
+const batchDrafts=[];
+renderBatchPage();
+document.addEventListener('click',e=>{const b=e.target.closest('[data-batch-draft-open]');if(!b)return;if(batchRows.length&&!confirm('当前有未保存数据，是否切换到草稿？'))return;batchRows=batchDrafts.splice(Number(b.dataset.batchDraftOpen),1)[0]||[];close();selectInvoiceTab('batch');drawBatchCards();});
+const rulesStyle=document.createElement('style');rulesStyle.textContent='.batch-card .fields{align-items:start}.batch-card .fields>label{display:flex;flex-direction:column;align-items:stretch;gap:7px}.batch-card input:not([type=file]),.batch-card select{min-height:34px;height:34px;box-sizing:border-box}.detail-processing select{max-width:240px}.ocr-preview input,.ocr-preview select{box-sizing:border-box;width:100%}';document.head.append(rulesStyle);
+
+// Seed ordinary red, missing historical face, and a historical multi-invoice document.
+invoices.push({number:'26312000000000861360',seller:'上海华兴科技有限公司',synced:false,total:-1000,origin:'手工登记',lines:[makeLine('JXDJ-47001','PO-0848 / 001',-600,'完成','人工')]});
+invoices.push({number:'26312000000000861364',seller:'上海华兴科技有限公司',synced:false,total:1000,origin:'手工登记',lines:[makeLine('JXDJ-47004','PO-0848 / 001',600,'完成','人工')]});
+invoices.push({number:'26312000000000861361',seller:'上海华兴科技有限公司',synced:false,total:null,origin:'手工登记',lines:[makeLine('JXDJ-47002','PO-0848 / 001',200,'完成','人工')]});
+invoices.push({number:'26312000000000861362',seller:'上海瑞丰贸易有限公司',synced:true,total:1000,origin:'手工登记',lines:[makeLine('JXDJ-47003','PO-0831 / 001',600,'完成','人工')]});
+invoices.push({number:'26312000000000861363',seller:'上海瑞丰贸易有限公司',synced:true,total:800,origin:'手工登记',lines:[makeLine('JXDJ-47003','PO-0845 / 002',400,'完成','人工')]});
+for(const invoice of invoices){invoice.type=invoice.type||'增值税专用发票';invoice.events=[];const system=invoice.origin.startsWith('金蝶');recordLedgerChange(invoice,system?'系统采集／匹配（示例初始记录）':'手工登记提交（示例初始记录）',system?'系统':'张石磊',null);}
+// Make the existing detail route keep historical documents while adding row-level actions.
+const baseRegistrationDetail=registrationDetail;
+registrationDetail=function(invoice,id){baseRegistrationDetail(invoice,id);installDetailActions(invoice,id);};
+const scenarioBar=document.createElement('div');scenarioBar.style='padding:12px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #dce6f0';
+scenarioBar.innerHTML='<label>演示场景 <select id="demo-scenario"><option value="">请选择</option><option value="again">同票继续登记／金额更正</option><option value="collected">已采集后登记</option><option value="negative">红字负数登记</option><option value="missing">历史票面金额缺失</option><option value="multi">历史一单多票／整条退回</option><option value="excess">采集后超额，继续确认</option><option value="auto">首次采集自动匹配</option></select></label><button id="demo-open">打开场景</button>';
+$('#ledger-page').prepend(scenarioBar);$('#demo-open').onclick=()=>{const key=$('#demo-scenario').value,map={again:'26312000000000861364',collected:'26312000000000861358',negative:'26312000000000861360',missing:'26312000000000861361',multi:'26312000000000861362',excess:'26312000000000861354'};if(key==='auto'){showAutoCollection();return;}const i=invoices.find(i=>i.number===map[key]);if(!i)return;if(key==='multi')registrationDetail(i,'JXDJ-47003');else if(key==='excess')registrationDetail(i,'JXDJ-45136');else register(false,i);};
+function showAutoCollection(){open('首次采集演示','<p>采集先建立台账；已有登记或退回、作废过的，不重复自动匹配。</p><div class="fields"><label>发票号码<input id="auto-number" value="26312000000000861501"></label><label>票面金额<input id="auto-face" type="number" value="1000"></label><label>自动匹配结果<select id="auto-result"><option value="yes">成功，生成600元登记</option><option value="no">失败，转待人工匹配</option></select></label></div>',[{label:'完成采集',primary:true,action:()=>{const number=$('#auto-number').value.trim(),face=Number($('#auto-face').value);if(!/^\d+$/.test(number)||!face||!Number.isFinite(face)){$('#message').textContent='请输入正确票号和非零票面金额。';return;}let i=invoices.find(i=>i.number===number);if(!i){i={number,seller:'上海华兴科技有限公司',total:null,synced:false,origin:'金蝶自动拉取',lines:[]};if($('#auto-result').value==='yes'){i.autoOrder='PO-0848 / 001';i.autoAmount=(face<0?-1:1)*Math.min(600,Math.abs(face));}invoices.push(i);}collectInvoice(i,face);render();invoiceDetail(i);}}]);}
+const preHandleSelect=selectInvoiceTab;
+selectInvoiceTab=function(tab){preHandleSelect(tab);if(tab==='handle')renderHandlePage();};
+render();
+
+const registrationScenarios=[
+ ['first','首次登记：尚无台账'],['pending','已有台账：未采集'],['collected','已有台账：已采集'],['mismatch','未采集：识别金额不一致'],['collected-mismatch','已采集：识别金额不一致'],['insufficient','本次金额超过剩余额度'],['missing','历史台账缺少票面金额'],['red','红字发票继续登记']
+];
+function makeDemoInvoiceFile(number,face){
+ const content='BT /F1 20 Tf 60 760 Td (PROTOTYPE DEMO INVOICE) Tj 0 -45 Td /F1 14 Tf (Invoice No: '+number+') Tj 0 -30 Td (Whole gross amount: '+face+') Tj 0 -30 Td (Sample file for local interaction only.) Tj ET';
+ const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream'];
+ let pdf='%PDF-1.4\n',offset=[0];objects.forEach((s,i)=>{offset.push(pdf.length);pdf+=(i+1)+' 0 obj\n'+s+'\nendobj\n';});const xref=pdf.length;pdf+='xref\n0 6\n0000000000 65535 f \n'+offset.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+ return new File([pdf],'演示发票-'+number+'.pdf',{type:'application/pdf'});
+}
+function makeRegistrationScenario(key){
+ const index=registrationScenarios.findIndex(([id])=>id===key);if(index<0)return;
+ const number='9900000000000000'+String(index+1).padStart(3,'0'),seller='上海华兴科技有限公司';
+ const config={first:{face:1000,used:0,amount:600,none:true,description:'尚无台账：票面金额1,000元，本次登记600元。提交后新增台账，已匹配600元、未匹配400元。'},pending:{face:1000,used:600,amount:400,description:'已找到未采集台账：票面1,000元、已匹配600元，本次可登记400元。票面金额可手动更正，保存成功后更新。'},collected:{face:1000,used:600,amount:400,synced:true,description:'已找到已采集台账：票面1,000元为只读、已匹配600元，本次最多登记400元。'},mismatch:{face:1000,used:600,amount:300,description:'模拟再次识别出900元，已有票面为1,000元。先保留1,000元；如确认原值错误，可手动改为900元再保存。',warning:'识别金额与已有票面金额不一致，请核对；如原金额有误，请手动更正。（本场景模拟识别900元）'},'collected-mismatch':{face:1000,used:600,amount:400,synced:true,description:'模拟识别900元，已采集金额为1,000元。仍保留1,000元且不可编辑，不被识别结果覆盖。',warning:'识别金额与已采集金额不一致，以采集金额为准。（本场景模拟识别900元）'},insufficient:{face:1000,used:600,amount:500,description:'票面1,000元、已匹配600元，本次输入500元，超过剩余400元。点击保存并提交，可看到拦截提示。'},missing:{face:1000,used:200,amount:300,missing:true,description:'历史台账原来缺少真实票面金额（—）。本次示例核对填写1,000元；保存后补齐，历史登记200元不变。'},red:{face:-1000,used:-600,amount:-400,description:'红字票面－1,000元、已匹配－600元，本次登记－400元，提交后全额匹配。'}}[key];
+ const sample={number,seller,...config};const old=invoices.findIndex(i=>i.number===number&&i.demoScenario);if(old>=0)invoices.splice(old,1);
+ if(!config.none){const i={number,seller,total:config.missing?null:config.face,synced:!!config.synced,origin:config.synced?'金蝶自动拉取':'手工登记',demoScenario:true,lines:[makeLine('DEMO-'+(index+1),'PO-0848 / 001',config.used,'完成',config.synced?'系统':'人工')],events:[]};invoices.push(i);recordLedgerChange(i,config.synced?'系统采集与匹配（演示初始数据）':'手工登记提交（演示初始数据）',config.synced?'系统':'张石磊',null);}
+ else {const existing=invoices.find(i=>i.number===number);if(existing)sample.number=number+String(Date.now()).slice(-4);}
+ return sample;
+}
+function installRegisterScenarios(load,variant){
+ const bar=document.createElement('div');bar.className='register-demo-controls';bar.hidden=true;
+ bar.innerHTML='<p id="register-demo-description" hidden></p>';
+ $('#content .single-file').after(bar);
+ const upload=$('#reg-upload-first'),realUpload=upload.onclick;
+ upload.onclick=()=>{
+  $('#dialog .upload-scenario-overlay')?.remove();
+  const overlay=document.createElement('div');overlay.className='upload-scenario-overlay';
+  const descriptions={first:'没有已有台账，票面1,000元，本次登记600元',pending:'已有台账未采集，票面1,000元，剩余400元',collected:'已有台账已采集，票面只读，剩余400元',mismatch:'模拟识别900元，已有1,000元，提示手动核对','collected-mismatch':'模拟识别900元，保留已采集的1,000元',insufficient:'只剩400元，本次登记500元，演示提交拦截',missing:'历史票面金额缺失，本次填写并保存补齐',red:'票面－1,000元，已有－600元，继续登记－400元'};
+  overlay.innerHTML='<section class="upload-scenario-panel" role="dialog" aria-modal="true" aria-labelledby="upload-scenario-title"><div class="upload-scenario-title"><h3 id="upload-scenario-title">选择演示发票</h3><button type="button" data-upload-cancel aria-label="关闭场景选择">×</button></div><p>点击场景即可模拟上传，带入对应发票信息与订单。</p><div class="upload-scenario-grid">'+registrationScenarios.map(([id,label])=>'<button type="button" data-upload-scenario="'+id+'"><strong>'+label+'</strong><span>'+descriptions[id]+'</span></button>').join('')+'</div><div class="upload-scenario-footer"><span>仅用于原型演示，未接入真实AI识别。</span><button type="button" id="upload-real-file">从电脑上传</button></div></section>';
+  $('#dialog').append(overlay);
+  function dismiss(){overlay.remove();upload.focus();}
+  overlay.querySelector('[data-upload-cancel]').onclick=dismiss;
+  overlay.onclick=e=>{if(e.target===overlay)dismiss();};
+  overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dismiss();}if(e.key==='Tab'){const list=[...overlay.querySelectorAll('button')];if(e.shiftKey&&document.activeElement===list[0]){e.preventDefault();list.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===list.at(-1)){e.preventDefault();list[0].focus();}}};
+  overlay.querySelectorAll('[data-upload-scenario]').forEach(button=>button.onclick=()=>{dismiss();load(button.dataset.uploadScenario);});
+  overlay.querySelector('#upload-real-file').onclick=()=>{dismiss();realUpload();};
+  overlay.querySelector('[data-upload-scenario]').focus();
+ };
+}
+function mountAmountFeedback(){
+ const input=$('#reg-face'),original=$('#reg-recognition-note');if(!input||!original)return;
+ const note=document.createElement('small');note.id=original.id;note.className='face-field-note';note.setAttribute('role','status');note.hidden=original.hidden;note.textContent=original.textContent;original.replaceWith(note);input.parentElement.append(note);
+ const hint=document.createElement('small');hint.id='reg-face-edit-hint';hint.className='face-edit-hint';hint.hidden=true;hint.setAttribute('role','status');input.parentElement.append(hint);
+}
+function registrationAmountHelp(){return ' <span class="face-amount-help registration-amount-help" role="button" tabindex="0" aria-label="本次登记金额说明" data-tooltip="本次登记的含税金额合计，不是整张发票的票面金额。">?</span>';}
+function positionLegacyOrderPopover(){
+ const picker=$('#reg-picker.legacy-order-popover'),anchor=$('#legacy-order-amount'),drawer=$('#dialog');if(!picker||picker.hidden||!anchor||!drawer.open)return;
+ const a=anchor.getBoundingClientRect(),d=drawer.getBoundingClientRect(),header=drawer.querySelector('h2').getBoundingClientRect();
+ const width=Math.min(1120,d.width-32),height=Math.min(620,window.innerHeight-140),left=Math.max(d.left+16,Math.min(a.left,d.right-width-16));
+ const minTop=Math.max(16,header.bottom+16),below=a.bottom+8,top=below+height<window.innerHeight-20?below:Math.max(minTop,Math.min(a.top-height-8,window.innerHeight-height-20));
+ Object.assign(picker.style,{inset:'auto',left:left+'px',top:top+'px',width:width+'px',height:height+'px'});anchor.setAttribute('aria-expanded','true');anchor.setAttribute('aria-controls','reg-picker');
+}
+window.addEventListener('resize',positionLegacyOrderPopover);
+const scenarioStyles=document.createElement('style');scenarioStyles.textContent=`
+ .register-demo-controls{padding:10px 12px;margin:0 0 18px;border:1px dashed #b9c9dc;background:#fafbfd;border-radius:4px;color:#60768b;font-size:12px}
+ .register-demo-controls>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.register-demo-controls select{min-width:220px!important;max-width:100%;height:32px!important;min-height:32px!important}.register-demo-controls strong{color:#526d85}.register-demo-controls span{font-size:11px;color:#7e8fa0}.register-demo-controls p{line-height:1.8;margin:9px 0 0;color:#365b7a}
+ .face-amount-help{display:inline-flex!important;align-items:center;justify-content:center;vertical-align:middle;width:16px;height:16px;box-sizing:border-box;border:1px solid #9bafc2;border-radius:50%;font-size:11px;line-height:1;color:#6b849b;cursor:help;margin:0 4px}.face-amount-help:hover,.face-amount-help:focus-visible{color:#1685db;border-color:#1685db;outline:2px solid #d6eaff;outline-offset:2px}
+ .registration-visual #reg-picker.legacy-order-popover{position:fixed;z-index:55;box-sizing:border-box;max-height:calc(100vh - 100px);border:1px solid #b9cddd;border-top:1px solid #b9cddd;border-radius:4px;box-shadow:0 6px 24px rgba(35,62,85,.2);padding:14px;background:#fff}
+ .registration-visual #reg-picker.legacy-order-popover .reg-picker-title{background:transparent;border:0;padding:0 0 10px}.registration-visual #reg-picker.legacy-order-popover .pc-picker-tabs{margin-top:0}.registration-visual #reg-picker.legacy-order-popover #reg-picker-supplier{margin:8px 0}.registration-visual #reg-picker.legacy-order-popover .pc-picker-filters{gap:8px;padding-bottom:10px}
+ .registration-visual #reg-recognition-note{display:block;box-sizing:border-box;width:100%;font-size:12px;line-height:1.7;white-space:normal;overflow-wrap:anywhere;color:#9b651f;background:#fff8e9;border:1px solid #f0dcad;border-radius:4px;padding:8px 10px;margin:8px 0 0}
+ .registration-visual #reg-recognition-note[hidden],.registration-visual #reg-face-edit-hint[hidden]{display:none!important}.registration-visual #reg-face-edit-hint{display:block;width:100%;white-space:normal;font-size:12px;line-height:1.7;color:#71859a;margin-top:7px}
+ .legacy-invoice-table td:has(#reg-face){min-width:260px;max-width:320px;white-space:normal}.legacy-invoice-table td #reg-face{width:100%;box-sizing:border-box;min-width:180px}
+ .upload-scenario-overlay{position:absolute;inset:0;z-index:90;background:rgba(34,57,79,.28);display:flex;align-items:center;justify-content:center;padding:20px}
+ .upload-scenario-panel{box-sizing:border-box;width:min(760px,100%);max-height:95%;overflow:auto;padding:22px;background:#fff;border:1px solid #cfdfed;border-radius:8px;box-shadow:0 12px 45px #203d5130;color:#36536b}
+ .upload-scenario-title{display:flex;align-items:center;justify-content:space-between}.upload-scenario-title h3{font-size:18px;margin:0}.upload-scenario-title button{border:0;font-size:22px;background:transparent;padding:0 7px}.upload-scenario-panel>p{font-size:12px;color:#71859a;margin:10px 0 16px}
+ .upload-scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.upload-scenario-grid button{box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;min-height:84px;white-space:normal;padding:13px;border:1px solid #d4e1ee;background:#f8fbff;color:#36536b;border-radius:5px}.upload-scenario-grid button:hover,.upload-scenario-grid button:focus-visible{border-color:#1988ed;background:#edf5ff}.upload-scenario-grid strong{font-size:13px}.upload-scenario-grid span{font-size:12px;line-height:1.6;color:#70849a}
+ .upload-scenario-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;padding-top:14px;border-top:1px solid #e0e8f0}.upload-scenario-footer span{font-size:11px;color:#7c8c9e}.upload-scenario-footer button{flex-shrink:0;color:#1884dc;border-color:#b6d5ef}
+ @media(max-width:600px){.upload-scenario-overlay{padding:10px}.upload-scenario-panel{padding:16px}.upload-scenario-grid{grid-template-columns:1fr}.upload-scenario-footer{flex-wrap:wrap}}
+ .registration-visual .single-file,.registration-visual .legacy-registration>.single-file{background:transparent;border:0;border-radius:0;padding:0 0 18px;margin:0;gap:12px}
+ .registration-visual .single-file>label{flex:0 0 100%;box-sizing:border-box;background:linear-gradient(100deg,#e6f0fc,#f3f7fd);border:1px solid #d3e3f4;border-radius:5px;font-size:15px;font-weight:600;padding:12px 16px;margin:0 0 4px;color:#294c6b;display:flex;align-items:center;gap:6px}
+ .registration-visual .single-file>label:before{content:'';display:inline-block;width:4px;height:20px;background:#278cf0;margin-right:7px}.registration-visual .single-file #reg-upload-first{margin-left:12px}.legacy-invoice-table #legacy-invoice-seller{width:200px}
+ `;document.head.append(scenarioStyles);
+
+// Product-only single-add drawer. Keeps PC fields, product selector and submit action.
+function openBatchSingle(){
+ const esc=batchEsc,head={supplier:'',agent:'',category:'',remark:'',attachments:[]};let rows=[],active=null;
+ const suppliers=[...new Set(invoices.map(i=>i.seller))];
+ const current=()=>rows.find(r=>r.key===active)||rows[0];
+ const makeRow=()=>newBatchRow({supplier:head.supplier,agent:head.agent,category:head.category,invoiceSeller:head.supplier,code:'',accounting:'',remark:'',products:[],apportion:[],lookupNumber:'',faceCache:new Map()});
+ open('新建进项发票登记 · 商品登记',`<div class="single-file"><label>发票文件 <b style="color:#db6054">*</b></label><button id="reg-upload-first" class="primary">上传发票</button><span id="bs-file-name">未上传</span><button id="bs-view" class="link" hidden>查看</button><button id="bs-recognize" hidden>识别填写</button><input id="bs-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.ofd,.xml" hidden></div><div class="single-heading"><strong>登记信息</strong></div><div class="single-form registration-basic-fields"><label>供应商 <b>*</b><input id="bs-supplier" list="bs-suppliers" placeholder="识别带出，或选择供应商"></label><label>业务员 <b>*</b><select id="bs-agent" disabled><option value="">请先选择供应商</option></select></label><label>发票类别 <b>*</b><select id="bs-category"><option value="">请选择</option><option>采购发票</option><option>费用发票</option></select></label><label class="single-wide">备注<input id="bs-header-remark"></label></div><datalist id="bs-suppliers">${suppliers.map(s=>'<option value="'+esc(s)+'">').join('')}</datalist><p id="bs-supplier-note" class="subtle" hidden></p><div class="single-other registration-attachments"><label><span>附件</span><span class="attachment-controls"><button id="bs-attachments-button">上传附件</button><span id="bs-attachments-name">未上传</span></span><input id="bs-attachments" type="file" multiple hidden></label></div><div class="single-heading"><strong>发票明细</strong><button id="bs-add-invoice">＋添加发票明细</button></div><div id="bs-money" class="reg-ledger-summary" hidden></div><div class="legacy-invoice-scroll"><table class="small-table bs-invoice-table"><thead><tr>${['当前','操作','发票供应商 *','发票日期 *','发票超期日期 *','发票代码','发票号码 *','发票文件 *','票面含税金额 *','是否新旧做账方式 *','总金额','价税合计（本次登记金额）','业务员分摊','备注','发票类型 *'].map(t=>'<th>'+t+'</th>').join('')}</tr></thead><tbody id="bs-rows"></tbody></table></div><div class="reg-registration-preview" id="bs-total">本单价税合计：¥0.00</div><div id="bs-popover" class="bs-popover" hidden></div>`,[{label:'取消',action:close},{label:'保存并提交',primary:true,action:submit}]);
+ $('#dialog').classList.add('registration-visual');
+ function setSupplier(value){if(!suppliers.includes(value)){$('#message').textContent='请选择系统已有供应商。';return false;}if(head.supplier&&value!==head.supplier&&rows.length){$('#message').textContent='已有发票明细，供应商沿用原单据，不在此切换。';$('#bs-supplier').value=head.supplier;return false;}head.supplier=value;head.agent=value==='上海瑞丰贸易有限公司'?'李敏':'张石磊';$('#bs-supplier').value=value;$('#bs-agent').disabled=false;$('#bs-agent').innerHTML='<option>张石磊</option><option>李敏</option>';$('#bs-agent').value=head.agent;for(const r of rows){r.supplier=value;r.agent=head.agent;if(!r.invoiceSeller)r.invoiceSeller=value;}return true;}
+ function lookup(r){const i=invoices.find(i=>i.number===r.number),changed=r.lookupNumber!==r.number;if(changed){if(r.lookupNumber&&!r.locked)r.faceCache.set(r.lookupNumber,r.face);r.lookupNumber=r.number;r.face=i&&hasFace(i)?i.total:r.faceCache.get(r.number)??'';r.warning='';}r.locked=!!i?.synced;if(r.locked)r.face=i.total;r.record=i||null;return i;}
+ function drawMoney(){const r=current();if(!r){$('#bs-money').hidden=true;return;}const i=r.record,valid=r.face!==''&&Number.isFinite(Number(r.face)),used=i?Math.abs(amounts(i).matched):0,available=valid?Math.max(0,Math.abs(Number(r.face))-used):null,pending=i&&!i.synced&&valid&&(!hasFace(i)||Number(r.face)!==Number(i.total));$('#bs-money').hidden=false;$('#bs-money').innerHTML='<span>'+(i?'已有台账票面金额':'票面含税金额')+' <span class="face-amount-help" role="button" tabindex="0" data-tooltip="整张发票的含税总金额，不是本次登记金额。">?</span> <strong>'+(i?(hasFace(i)?money(i.total):'—'):valid?money(r.face):'—')+'</strong></span><span>'+(pending?'本次可登记（按本次填写金额）':'本次可登记')+' <strong>'+(available===null?'—':money(Number(r.face)<0?-available:available))+'</strong></span>';
+ const cell=$('#bs-rows [data-bsi-key="'+r.key+'"]'),hint=cell?.querySelector('[data-face-hint]');if(hint)hint.textContent=pending?(hasFace(i)?'本次更正为':'本次填写')+money(r.face)+'，提交成功后'+(hasFace(i)?'更新':'补齐')+'台账票面金额。':'';
+ $('#bs-total').textContent='本单价税合计：'+money(rows.reduce((s,r)=>s+batchSum(r),0));}
+ function updateUpload(){const r=current();$('#bs-file-name').textContent=r?.file?.name||'未上传';$('#bs-view').hidden=$('#bs-recognize').hidden=!r?.file;$('#reg-upload-first').textContent=r?.file?'更换发票':'上传发票';}
+ function draw(){
+  $('#bs-supplier').disabled=!!head.supplier&&rows.length>0;
+  $('#bs-rows').innerHTML=rows.map(r=>{lookup(r);const net=r.products.reduce((s,p)=>s+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0)/100;return '<tr data-bsi-key="'+r.key+'" class="'+(r.key===active?'bs-current':'')+'"><td><input type="radio" name="bs-current" data-bsi-select '+(r.key===active?'checked':'')+'></td><td><button class="link" data-bs-clone>复制</button> <button class="link" data-bs-delete>删除</button></td><td><input data-bsi-field="invoiceSeller" value="'+esc(r.invoiceSeller||'')+'"></td><td><input type="date" data-bsi-field="date" value="'+esc(r.date)+'"></td><td><input type="date" data-bsi-field="over" value="'+esc(r.over)+'"></td><td><input data-bsi-field="code" value="'+esc(r.code||'')+'"></td><td><input data-bsi-field="number" inputmode="numeric" value="'+esc(r.number)+'"></td><td>'+(r.file?'<button class="link" data-bs-file-view>查看</button> <button class="link" data-bs-file-replace>更换</button><small>'+esc(r.file.name)+'</small>':'<button class="link" data-bs-file-replace>上传发票</button>')+'</td><td class="bs-face"><input type="number" step="0.01" data-bsi-field="face" value="'+esc(r.face)+'" '+(r.locked?'readonly':'')+'><small class="face-field-note" data-face-warning '+(r.warning?'':'hidden')+'>'+esc(r.warning||'')+'</small><small data-face-hint></small></td><td><select data-bsi-field="accounting"><option value="">请选择</option><option value="0" '+(r.accounting==='0'?'selected':'')+'>否</option><option value="1" '+(r.accounting==='1'?'selected':'')+'>是</option></select></td><td><button class="link" data-bs-products>'+money(net)+'</button></td><td>'+money(batchSum(r))+'</td><td><button class="link" data-bs-apportion>'+esc((r.apportion||[]).map(a=>a.name+'（'+money(a.amount)+'）').join('、')||'—')+'</button></td><td><input data-bsi-field="remark" value="'+esc(r.remark||'')+'"></td><td><select data-bsi-field="type"><option value="">请选择</option>'+['增值税普通发票','增值税专用发票','其他发票'].map(t=>'<option '+(r.type===t?'selected':'')+'>'+t+'</option>').join('')+'</select></td></tr>';}).join('')||'<tr><td colspan="15" style="padding:30px;text-align:center;color:#8495a5">选择供应商后添加发票明细，也可先上传发票识别。</td></tr>';
+  updateUpload();drawMoney();
+ }
+ function add(){if(!setSupplier($('#bs-supplier').value.trim()))return;const book=new Map();for(const r of rows){const error=validate(r,book);if(error){$('#message').textContent='请先完善已有发票：'+error;return;}}const r=makeRow();rows.push(r);active=r.key;draw();}
+ function validate(r,book){lookup(r);r.supplier=head.supplier;r.agent=head.agent;r.category=head.category;if(!r.invoiceSeller)return '请填写发票供应商。';if(!r.type)return '请选择发票类型。';if(r.accounting==='')return '请选择是否新旧做账方式。';if((r.apportion||[]).reduce((s,a)=>s+Math.round(Number(a.amount)*100),0)!==Math.round(batchSum(r)*100))return '业务员分摊合计须等于本次登记金额。';return validateBatchRow(r,true,book);}
+ $('#bs-supplier').onchange=()=>{if(setSupplier($('#bs-supplier').value.trim()))draw();};
+ $('#bs-agent').onchange=()=>{head.agent=$('#bs-agent').value;rows.forEach(r=>r.agent=head.agent);};$('#bs-category').onchange=()=>head.category=$('#bs-category').value;
+ $('#bs-header-remark').oninput=()=>head.remark=$('#bs-header-remark').value;
+ $('#bs-attachments-button').onclick=()=>$('#bs-attachments').click();$('#bs-attachments').onchange=()=>{head.attachments=Array.from($('#bs-attachments').files||[]);$('#bs-attachments-name').textContent=head.attachments.map(f=>f.name).join('、')||'未上传';};
+ $('#bs-add-invoice').onclick=add;
+ $('#reg-upload-first').onclick=()=>$('#bs-file').click();
+ $('#bs-file').onchange=e=>{const file=e.target.files[0];if(!file)return;let r=current();if(r?.file&&!confirm('更换发票文件后请重新核对信息，是否继续？'))return;if(!r){r=makeRow();rows.push(r);active=r.key;}r.file=file;r.url=URL.createObjectURL(file);draw();e.target.value='';};
+ $('#bs-view').onclick=()=>{if(current()?.url)window.open(current().url,'_blank','noopener');};
+ function applyAI(r,data){if(!data)return;if((r.number||r.date||r.code)&&!confirm('识别结果将填写发票字段，请核对已有修改。是否继续？'))return;for(const field of ['number','date','code'])if(data[field])r[field]=data[field];lookup(r);if(data.face!==undefined&&data.face!==''){if(r.record&&hasFace(r.record)&&Number(r.record.total)!==Number(data.face))r.warning=r.locked?'识别金额与已采集金额不一致，以采集金额为准。':'识别金额与已有票面金额不一致，请核对；如原金额有误，请手动更正。';else if(!r.locked)r.face=Number(data.face);}if(data.seller){r.invoiceSeller=data.seller;if(!head.supplier&&suppliers.includes(data.seller))setSupplier(data.seller);$('#bs-supplier-note').hidden=data.seller===head.supplier;$('#bs-supplier-note').textContent='识别到开票方：'+data.seller+'；请核对并选择系统供应商。';}r.color=data.color;r.type=data.type;draw();}
+ $('#bs-recognize').onclick=()=>{const r=current();if(r?.file)recognitionPreview({number:r.number,supplier:r.invoiceSeller||head.supplier,face:r.face},data=>applyAI(r,data));};
+ $('#bs-rows').oninput=e=>{const tr=e.target.closest('[data-bsi-key]');if(!tr||!e.target.dataset.bsiField)return;const r=rows.find(r=>String(r.key)===tr.dataset.bsiKey);r[e.target.dataset.bsiField]=e.target.value;if(e.target.dataset.bsiField==='face'&&!r.locked)r.faceCache.set(r.number,r.face);active=r.key;drawMoney();};
+ $('#bs-rows').onchange=e=>{const tr=e.target.closest('[data-bsi-key]');if(!tr)return;const r=rows.find(r=>String(r.key)===tr.dataset.bsiKey);active=r.key;if(e.target.dataset.bsiField==='number'){lookup(r);const input=tr.querySelector('[data-bsi-field=face]');input.value=r.face;input.readOnly=r.locked;const note=tr.querySelector('[data-face-warning]');note.textContent=r.warning||'';note.hidden=!r.warning;}$('#bs-rows').querySelectorAll('[data-bsi-key]').forEach(row=>row.classList.toggle('bs-current',row.dataset.bsiKey===String(r.key)));updateUpload();drawMoney();};
+ $('#bs-rows').onclick=e=>{const tr=e.target.closest('[data-bsi-key]');if(!tr)return;const r=rows.find(r=>String(r.key)===tr.dataset.bsiKey);active=r.key;updateUpload();drawMoney();if(e.target.hasAttribute('data-bs-delete')){rows=rows.filter(x=>x!==r);active=rows[0]?.key;draw();}if(e.target.hasAttribute('data-bs-clone')){const copy={...r,key:Date.now()+Math.random(),products:r.products.map(p=>({...p})),apportion:r.apportion.map(p=>({...p})),faceCache:new Map(r.faceCache)};rows.push(copy);active=copy.key;draw();}if(e.target.hasAttribute('data-bs-file-view')&&r.url)window.open(r.url,'_blank','noopener');if(e.target.hasAttribute('data-bs-file-replace'))$('#reg-upload-first').click();if(e.target.hasAttribute('data-bs-products'))productsPopover(r);if(e.target.hasAttribute('data-bs-apportion'))apportionPopover(r);};
+ function popup(title,body,commit){const panel=$('#bs-popover');panel.hidden=false;panel.innerHTML='<div class="reg-picker-title"><strong>'+title+'</strong><button data-bs-pop-close class="link">×</button></div>'+body+'<div class="actions"><button data-bs-pop-close>关闭</button><button id="bs-pop-confirm" class="primary">确定</button></div>';panel.querySelectorAll('[data-bs-pop-close]').forEach(b=>b.onclick=()=>panel.hidden=true);$('#bs-pop-confirm').onclick=()=>{const error=commit();if(error){$('#message').textContent=error;return;}panel.hidden=true;$('#message').textContent='';draw();};return panel;}
+ function productsPopover(r){let rendering=false;let selected=r.products.map(p=>({...p}));const catalog=[{name:'设备A',unit:'件',qty:1,gross:0,rate:13},{name:'配件B',unit:'件',qty:1,gross:0,rate:13},{name:'材料C',unit:'套',qty:1,gross:0,rate:13}];
+ const panel=popup('选择发票商品','<div class="pc-picker-tabs"><button data-sku-tab="choose">添加商品</button><button data-sku-tab="selected">已选商品</button></div><div id="bs-sku-content" class="scroll"></div>',()=>{if(!selected.length)return '请选择商品。';if(selected.some(p=>!p.name||!Number.isFinite(p.qty)||!p.qty||!Number.isFinite(p.gross)||!p.gross||!Number.isFinite(p.rate)||p.rate<0||p.rate>100))return '请完善商品数量、金额和税率。';r.products=selected;r.apportion=[{name:head.agent,amount:batchSum(r)}];return '';});
+ function drawTab(tab){if(rendering)return;rendering=true;try{panel.querySelectorAll('[data-sku-tab]').forEach(b=>b.classList.toggle('active',b.dataset.skuTab===tab));$('#bs-sku-content').innerHTML=tab==='choose'?'<table class="small-table"><tr><th>选择</th><th>商品名称</th><th>单位</th></tr>'+catalog.map((p,i)=>'<tr><td><input type="checkbox" data-sku-candidate="'+i+'" '+(selected.some(s=>s.name===p.name)?'checked':'')+'></td><td>'+esc(p.name)+'</td><td>'+p.unit+'</td></tr>').join('')+'</table>':'<table class="small-table"><tr><th>商品名称</th><th>单位</th><th>数量</th><th>未税单价</th><th>含税金额</th><th>税率</th><th>税额</th></tr>'+selected.map((p,i)=>'<tr data-sku-index="'+i+'"><td>'+esc(p.name)+'</td><td>'+esc(p.unit||'件')+'</td><td><input type="number" data-sku-field="qty" value="'+p.qty+'"></td><td><input type="number" data-sku-field="price" value="'+(p.qty?Number((p.gross/(1+p.rate/100)/p.qty).toFixed(4)):0)+'"></td><td><input type="number" step="0.01" data-sku-field="gross" value="'+p.gross+'"></td><td><input type="number" data-sku-field="rate" value="'+p.rate+'">%</td><td>'+money(p.gross-p.gross/(1+p.rate/100))+'</td></tr>').join('')+'</table>';}finally{rendering=false;}}
+ panel.querySelectorAll('[data-sku-tab]').forEach(b=>b.onclick=()=>drawTab(b.dataset.skuTab));panel.onchange=e=>{if(rendering)return;if(e.target.dataset.skuCandidate!==undefined){const p=catalog[Number(e.target.dataset.skuCandidate)];if(e.target.checked&&!selected.some(s=>s.name===p.name))selected.push({...p});else if(!e.target.checked)selected=selected.filter(s=>s.name!==p.name);}if(e.target.dataset.skuField){const p=selected[Number(e.target.closest('[data-sku-index]').dataset.skuIndex)],field=e.target.dataset.skuField,oldPrice=p.qty?p.gross/(1+p.rate/100)/p.qty:0;p[field]=Number(e.target.value);if(field==='price'||field==='qty'||field==='rate')p.gross=Math.round(p.qty*(field==='price'?p.price:oldPrice)*(1+p.rate/100)*100)/100;drawTab('selected');}};drawTab(selected.length?'selected':'choose');
+ }
+ function apportionPopover(r){const split=(r.apportion.length?r.apportion:[{name:head.agent,amount:batchSum(r)}]).map(a=>({...a}));popup('业务员分摊','<table class="small-table"><tr><th>业务员</th><th>分摊金额</th></tr>'+['张石磊','李敏'].map(name=>'<tr><td>'+name+'</td><td><input type="number" step="0.01" data-bs-split="'+name+'" value="'+(split.find(s=>s.name===name)?.amount||0)+'"></td></tr>').join('')+'</table>',()=>{const list=Array.from(document.querySelectorAll('[data-bs-split]')).map(el=>({name:el.dataset.bsSplit,amount:Number(el.value)})).filter(a=>a.amount);if(list.some(a=>!Number.isFinite(a.amount))||list.reduce((s,a)=>s+Math.round(a.amount*100),0)!==Math.round(batchSum(r)*100))return '分摊金额合计必须等于价税合计。';r.apportion=list;return '';});}
+ function submit(){head.category=$('#bs-category').value;head.agent=$('#bs-agent').value;if(!suppliers.includes(head.supplier)||!head.agent||!head.category){$('#message').textContent='请完善供应商、业务员和发票类别。';return;}if(!rows.length){$('#message').textContent='请添加发票明细。';return;}const book=new Map();for(const r of rows){const error=validate(r,book);if(error){active=r.key;draw();$('#message').textContent=(r.number||'当前发票')+'：'+error;return;}}
+ const id='JXDJ-'+String(45130+next++),meta={supplier:head.supplier,agent:head.agent,category:head.category,remark:head.remark,attachments:head.attachments.map(f=>f.name),cards:rows.map(r=>({...r,seller:r.invoiceSeller,file:r.file.name,orders:[],face:Number(r.face)}))},touched=new Map();
+ for(const r of rows){let i=invoices.find(i=>i.number===r.number);if(!touched.has(r.number))touched.set(r.number,i?ledgerSnapshot(i):null);if(!i){i={number:r.number,seller:head.supplier,total:Number(r.face),synced:false,origin:'手工登记',lines:[]};invoices.push(i);}if(!i.synced){i.total=Number(r.face);i.type=r.type||i.type||null;}else if(!i.type&&r.type)i.type=r.type;const line=makeLine(id,'',batchSum(r),'审核中','人工');line.registrationMeta=meta;i.lines.push(line);}
+ for(const [number,before]of touched)recordLedgerChange(invoices.find(i=>i.number===number),'商品单条登记提交','张石磊',before);render();close();$('#batch-result').textContent='登记单 '+id+' 已提交审核，发票明细已关联台账。';
+ }
+ function demo(key){if((rows.some(r=>r.file||r.products.length))&&!confirm('载入场景将替换当前未保存的发票明细，是否继续？'))return;const s=makeRegistrationScenario(key);rows=[];head.supplier='';setSupplier(s.seller);const r=makeRow();r.number=s.number;r.invoiceSeller=s.seller;lookup(r);if(!r.locked)r.face=s.face;Object.assign(r,{file:makeDemoInvoiceFile(s.number,s.face),date:'2026-11-25',over:'2026-11-20',accounting:'0',type:'增值税专用发票',products:[{name:'设备A',unit:'件',qty:s.amount<0?-1:1,gross:s.amount,rate:13}],apportion:[{name:head.agent,amount:s.amount}],warning:s.warning||''});r.url=URL.createObjectURL(r.file);rows=[r];active=r.key;head.category='采购发票';$('#bs-category').value=head.category;draw();const note=$('#register-demo-description');note.parentElement.hidden=false;note.hidden=false;note.textContent='演示场景：'+s.description;}
+ installRegisterScenarios(demo,'batch-single');draw();
+}
+// Keep bulk-import path as-is; add optional AI beside each uploaded invoice file.
+const batchDrawWithoutAI=drawBatchCards;
+drawBatchCards=function(){batchDrawWithoutAI();for(const r of batchRows){const card=$('#batch-cards [data-batch-key="'+r.key+'"]');if(!card)continue;const typeLabel=document.createElement('label');typeLabel.innerHTML='发票类型 <b style="color:#db6054">*</b>'; const type=document.createElement('select');type.dataset.batchField='type';type.innerHTML='<option value="">请选择</option>'+['增值税普通发票','增值税专用发票','其他发票'].map(t=>'<option '+(r.type===t?'selected':'')+'>'+t+'</option>').join('');typeLabel.append(type);card.querySelector('.fields').append(typeLabel);const label=card.querySelector('[data-batch-file]').closest('label'),recognize=document.createElement('button');recognize.className='link';recognize.textContent='识别填写';recognize.disabled=!r.file;label.append(recognize);const faceInput=card.querySelector('[data-batch-field="face"]'),note=document.createElement('small');note.className='face-field-note';note.style='display:block;white-space:normal;color:#9b651f;line-height:1.7';note.textContent=r.aiWarning||'';faceInput.after(note);recognize.onclick=()=>{openBulkAI(r);};}}
+function openBulkAI(r){
+ open('识别当前发票','<div id="bulk-ai-stage"></div>',[{label:'返回批量登记',action:()=>{close();selectInvoiceTab('batch');drawBatchCards();}}]);
+ recognitionPreview({number:r.number,supplier:r.supplier,face:r.face},data=>{const i=invoices.find(i=>i.number===data.number);r.number=data.number||r.number;r.date=data.date||r.date;r.code=data.code||r.code;r.invoiceSeller=data.seller||r.invoiceSeller;if(!r.supplier&&data.seller)r.supplier=data.seller;if(i&&hasFace(i)){r.face=i.total;r.aiWarning=Number(data.face)!==Number(i.total)?i.synced?'识别金额与已采集金额不一致，以采集金额为准。':'识别金额与已有票面金额不一致，请核对；如原金额有误，请手动更正。':'';}else if(data.face!=='')r.face=Number(data.face);r.type=data.type||r.type;r.lastLookup=r.number;close();selectInvoiceTab('batch');drawBatchCards();});
+}
+const batchPageWithoutSingle=renderBatchPage;
+renderBatchPage=function(){batchPageWithoutSingle();$('#batch-add').onclick=openBatchSingle;};
+const bsiStyle=document.createElement('style');bsiStyle.textContent='.bs-invoice-table{min-width:2450px!important}.bs-invoice-table input:not([type=radio]),.bs-invoice-table select{width:150px;box-sizing:border-box}.bs-invoice-table td,.bs-invoice-table th{white-space:nowrap;vertical-align:top}.bs-invoice-table small{display:block;font-size:11px;white-space:normal;max-width:220px;margin-top:6px;line-height:1.6}.bs-invoice-table .bs-face{min-width:240px;white-space:normal}.bs-invoice-table .face-field-note[hidden]{display:none}.bs-invoice-table .bs-current td{background:#f7fbff}.bs-popover{position:fixed;inset:12vh 4vw auto auto;width:min(900px,88vw);max-height:76vh;overflow:auto;background:#fff;border:1px solid #b8cddd;border-radius:5px;box-shadow:0 7px 26px #253f5835;padding:18px;z-index:65}.bs-popover[hidden]{display:none}.bs-popover .actions{position:static}.bs-popover table{min-width:800px}.bs-popover table input{width:100px}';document.head.append(bsiStyle);
+renderBatchPage();
+
 </script></html>
