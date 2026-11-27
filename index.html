@@ -345,28 +345,69 @@ function open(title,content,buttons=[]){
  }
  if(!$('#dialog').open)$('#dialog').showModal();
 }
-function registrationDetail(invoice,lineId){
- const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const changed=t=>'<span style="color:#b45309;font-weight:600">'+t+'</span>';
- const related=invoices.flatMap(record=>record.lines.filter(line=>line.id===lineId).map(line=>({record,line})));
- if(!related.length)return;
- const meta=related.find(x=>x.line.registrationMeta)?.line.registrationMeta||{};
- const groups=[...new Set(related.map(x=>x.record.number))].map(number=>{const items=related.filter(x=>x.record.number===number),card=meta.cards?.find(c=>c.number===number);return {number,items,card,total:items.reduce((n,x)=>n+Math.round(x.line.amount*100),0)/100};});
- const netFor=c=>c?.products?c.products.reduce((sum,p)=>sum+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0)/100:c?.orders?.reduce((n,o)=>n+(o.products||[]).filter(p=>p.checked).reduce((sum,p)=>sum+Math.round(Number(p.gross)/(1+Number(p.rate)/100)*100),0),0)/100;
- const total=related.reduce((n,x)=>n+Math.round(x.line.amount*100),0)/100;
- const allKnown=groups.every(g=>g.card?.orders?.length||g.card?.products?.length),net=allKnown?groups.reduce((n,g)=>n+Math.round(netFor(g.card)*100),0)/100:null;
- const rows=groups.map((g,i)=>{const c=g.card||{},split=c.invoiceStockSalesmanDTOS||c.apportion||[],file=c.file;return '<tr><td>'+esc(c.seller||g.items[0].record.seller)+'</td><td>'+esc(c.code||'—')+'</td><td>'+esc(g.number)+'</td><td>'+esc(g.items[0].record.synced?g.items[0].record.type||'—':'—')+'</td><td>'+(file?(c.url?'<button class="link" data-reg-file="'+i+'">查看</button>':'已记录：'+esc(file)+'（无可用预览）'):!meta.cards?'—':'—')+'</td><td>'+changed(c.color==='红字'?'是':c.color==='蓝字'?'否':'—')+'</td><td>'+changed(c.face!==undefined&&c.face!==''?money(c.face):'—')+'</td><td>'+(c.orders?.length||c.products?.length?money(netFor(c)):'—')+'</td><td>'+esc(split.map(x=>x.name+'（'+money(x.amount)+'）').join('、')||'—')+'</td><td>'+(c.orders?.length||c.products?.length?money(g.total-netFor(c)):'—')+'</td><td><span data-tooltip="本次关联订单的含税金额合计，可能只是整张发票金额的一部分。" tabindex="0">'+changed(money(g.total))+'</span></td><td>'+esc(c.date||'—')+'</td><td>'+esc(c.over||'—')+'</td><td>'+esc(c.remark||'—')+'</td><td>'+esc([...new Set(g.items.map(x=>x.line.state))].join('、'))+'</td><td><button class="link" data-reg-orders="'+i+'">'+(c.products?'商品明细':'关联订单详情')+'</button></td></tr>';}).join('');
- open('进项发票登记详情','<div class="fields"><div>供应商：'+esc(meta.supplier||invoice.seller)+'</div><div>业务员：'+esc(meta.agent||'—')+'</div><div>发票类别：'+esc(meta.category||'—')+'</div><div>制单员：—</div><div>制单时间：—</div><div>单据状态：'+esc(registrationDocumentState(related.map(x=>x.line.state)))+'</div><div>合计未税金额：'+(net===null?'—':money(net))+'</div><div>合计税额：'+(net===null?'—':money(total-net))+'</div><div><span style="color:#b45309;font-weight:600">合计价税合计（本单登记金额）：</span>'+money(total)+'</div><div>单据编号：'+esc(lineId)+'</div><div>备注：'+esc(meta.remark||'—')+'</div><div><span style="color:#b45309;font-weight:600">'+(meta.cards?'补充附件':'附件')+'：</span>'+esc(meta.attachments?.join('、')||(!meta.cards?'历史发票文件及资料.pdf（历史附件）':'—'))+'</div></div><p style="color:#b45309;font-size:12px">橙色字体为本次改造新增或调整的内容。</p><h3>发票明细</h3><div style="overflow:auto"><table class="small-table" style="min-width:1800px"><thead><tr>'+['发票单位','发票代码','发票号码','发票类型','发票文件','是否冲红','票面含税金额','总金额','业务员分摊','税额','价税合计（本次登记金额）','发票日期','发票超期日期','备注','处理结果','操作'].map(t=>'<th>'+(['是否冲红','票面含税金额','价税合计（本次登记金额）'].includes(t)?changed(t):t)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div>');
- document.querySelectorAll('[data-reg-file]').forEach(b=>b.onclick=()=>openInvoiceFile(groups[Number(b.dataset.regFile)].card.url,'_blank','noopener'));
- document.querySelectorAll('[data-reg-orders]').forEach(b=>b.onclick=()=>showRegistrationOrders(groups[Number(b.dataset.regOrders)]));
- function showRegistrationOrders(g){
- const c=g.card;
- if(c?.products){showBatchProducts(c,lineId,()=>registrationDetail(invoice,lineId));return;}
- const orders=c?.orders||g.items.map(x=>({code:x.line.order,amount:x.line.amount,products:[]}));
- const html=orders.map(o=>'<section class="pc-selected-order"><div class="pc-order-info"><span>采购订单号：'+esc(o.code.split(' / ')[0])+'</span><span>本次登记含税金额：'+money(o.amount)+'</span><span>业务员：'+esc(o.agent||'—')+'</span><div class="pc-order-remark">订单备注：'+esc(o.remark||'—')+'</div></div><div style="overflow:auto"><table class="small-table"><thead><tr><th>产品名称</th><th>规格型号</th><th>单位</th><th>本次数量</th><th>含税单价</th><th>含税总价</th><th>税率</th></tr></thead><tbody>'+(o.products||[]).filter(p=>p.checked).map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(p.spec)+'</td><td>'+esc(p.unit)+'</td><td>'+esc(p.qty)+'</td><td>'+(Number(p.qty)?Number((p.gross/p.qty).toFixed(8)).toLocaleString('zh-CN',{maximumFractionDigits:8}):'—')+'</td><td>'+money(p.gross)+'</td><td>'+esc(p.rate)+'%</td></tr>').join('')+'</tbody></table></div></section>').join('');
- open('关联订单详情','<p>发票号码：'+esc(g.number)+'　登记单号：'+esc(lineId)+'</p>'+html,[{label:'返回登记详情',action:()=>registrationDetail(invoice,lineId)}]);
- }
+// Field order and tabs follow invoice/input/modals/detail and its shared order-list.
+function pcProductAmounts(p){const gross=p.gross??p.totalAmount,rate=p.rate??(p.taxRate===undefined?null:Number(p.taxRate)*100),known=gross!==undefined&&gross!==null&&gross!==''&&rate!==null;const net=known?Math.round(Number(gross)/(1+Number(rate)/100)*100)/100:null;return {gross,rate,net,tax:known?Math.round((Number(gross)-net)*100)/100:null};}
+function pcDetailMoney(value){return value!==undefined&&value!==null&&value!==''?money(value):'—';}
+function pcDetailValue(value){return ticketEscape(value!==undefined&&value!==null&&value!==''?value:'—');}
+function pcProductsTable(products,orderMode=false){
+ const headers=orderMode?['序号','spu名称','产品名称','规格型号','采购单价','采购数量','单位','含税单价','数量','含税总价','税率','税额','未税总价']:['序号','SPU名称','产品名称','规格型号','品牌','系列','单位','单价','数量','总金额','税率','税额','价税合计'];
+ const rows=products.map((p,index)=>{const a=pcProductAmounts(p),qty=p.qty??p.quantityNew??p.quantity,price=qty&&a.gross!==undefined?Number((Number(a.gross)/Number(qty)).toFixed(8)):null;
+ const cells=orderMode?[index+1,p.spu??p.productName,p.name??p.skuName,p.spec??p.specModel,pcDetailMoney(p.purchasePrice??p._price),p.purchaseQty??p.quantity,p.unit??p.productUnitName,pcDetailMoney(price),qty,pcDetailMoney(a.gross),a.rate===null?'—':a.rate+'%',pcDetailMoney(a.tax),pcDetailMoney(a.net)]:[index+1,p.spu??p.productName,p.name??p.skuName,p.spec??p.specModel,p.brand??p.brandName,p.series??p.seriesName,p.unit??p.productUnitName,pcDetailMoney(qty&&a.net!==null?a.net/Number(qty):p.price),qty,pcDetailMoney(a.net),a.rate===null?'—':a.rate+'%',pcDetailMoney(a.tax),pcDetailMoney(a.gross)];
+ return '<tr>'+cells.map(v=>'<td>'+pcDetailValue(v)+'</td>').join('')+'</tr>';}).join('');
+ return '<div class="pc-original-scroll"><table class="small-table pc-original-products"><thead><tr>'+headers.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(products.length?'':'<div class="pc-original-empty">暂无数据</div>')+'</div>';
 }
+function pcRelatedOrderHTML(orders,invoice){
+ if(!orders.length)return '<div class="pc-original-empty">暂无数据</div>';
+ return orders.map((o,index)=>{const products=(o.products||o.productList||[]).filter(p=>p.checked!==false);const fields=[['订单编号',String(o.code??o.purchaseCode??'—').split(' / ')[0]],['供应商',o.seller??o.enterpriseName??invoice.seller],['业务员',o.agent??o.salesmanUserName],['订单金额',pcDetailMoney(o.orderTotal??o.totalAmount)],['可登记金额',pcDetailMoney(o.available??o.registrableAmount)],['发票类型',o.invoiceType],['合同编号',o.contract??o.contractCode],['本次开票金额',pcDetailMoney(o.amount)]];
+ return '<section class="pc-original-order"><div class="pc-original-order-title">'+(index+1)+'</div><div class="pc-original-order-fields">'+fields.map(([k,v])=>'<div><span>'+k+'：</span>'+pcDetailValue(v)+'</div>').join('')+'</div>'+pcProductsTable(products,true)+(o.remark?'<p class="subtle">订单备注：'+ticketEscape(o.remark)+'</p>':'')+'</section>';}).join('')+'<p class="pc-original-sum">合计金额：'+money(orders.reduce((n,o)=>n+Number(o.amount||0),0))+'</p>';
+}
+function registrationDetail(invoice,lineId){return renderPCRegistration(invoice,lineId);}
+function renderPCRegistration(invoice,lineId,embeddedHost=null){
+ const related=invoices.flatMap(record=>record.lines.filter(line=>line.id===lineId).map(line=>({record,line})));if(!related.length)return;
+ const meta=related.find(x=>x.line.registrationMeta)?.line.registrationMeta||{};
+ const groups=[...new Set(related.map(x=>x.record.number))].map(number=>{const items=related.filter(x=>x.record.number===number),card=meta.cards?.find(c=>c.number===number);return {number,items,card,total:items.reduce((n,x)=>n+Number(x.line.amount),0)};});
+ const productsFor=g=>g.card?.products??(g.card?.orders||[]).flatMap(o=>(o.products||[]).filter(p=>p.checked!==false));
+ const netFor=g=>{const products=productsFor(g);return products.length?products.reduce((n,p)=>n+(pcProductAmounts(p).net??0),0):null;};
+ const total=groups.reduce((n,g)=>n+g.total,0),known=groups.every(g=>netFor(g)!==null),net=known?groups.reduce((n,g)=>n+netFor(g),0):null;
+ const changed=v=>'<span class="pc-detail-change">'+v+'</span>';
+ const info=[['供应商',meta.supplier||invoice.seller],['业务员',meta.agent],['发票类别',meta.category],['制单员',meta.creator],['制单时间',meta.created],['单据状态',registrationDocumentState(related.map(x=>x.line.state))],['合计未税金额',pcDetailMoney(net)],['合计税额',pcDetailMoney(known?total-net:null)],['合计价税合计',money(total)],['单据编号',lineId],['备注',meta.remark]];
+ const html='<div class="pc-original-header">'+info.map(([k,v])=>'<div class="'+(k==='备注'?'pc-wide':'')+'"><span>'+k+'：</span>'+pcDetailValue(v)+(k==='合计价税合计'?' <span class="face-amount-help" tabindex="0" data-tooltip="本单登记的含税金额合计，不是整张发票的票面金额。">?</span>':'')+'</div>').join('')+'<div class="pc-wide"><span>附件：</span>'+pcDetailValue(meta.attachments?.join('、')||(!meta.cards?'历史发票文件及资料.pdf（历史附件）':'—'))+'</div></div><div id="pc-registration-tabs" class="pc-original-tabs"></div><div id="pc-registration-panel"></div>';
+ if(embeddedHost)embeddedHost.innerHTML=html;else open('进项发票登记详情',html,[{label:'关闭',action:close}]);
+ const tabs=[{id:'invoice',label:'发票明细'}];let active='invoice';
+ function ordersFor(g){return g.card?.orders??g.items.filter(x=>x.line.order).map(x=>({code:x.line.order,amount:x.line.amount,products:[]}));}
+ function draw(){
+  const tab=tabs.find(t=>t.id===active);$('#pc-registration-tabs').innerHTML=tabs.map(t=>'<span class="pc-original-tab '+(t.id===active?'active':'')+'"><button data-pc-tab="'+t.id+'">'+t.label+'</button>'+(t.id==='invoice'?'':'<button data-pc-close-tab="'+t.id+'" aria-label="关闭'+t.label+'">×</button>')+'</span>').join('');
+  document.querySelectorAll('[data-pc-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.pcTab;draw();});document.querySelectorAll('[data-pc-close-tab]').forEach(b=>b.onclick=()=>{const id=b.dataset.pcCloseTab;tabs.splice(tabs.findIndex(t=>t.id===id),1);if(active===id)active='invoice';draw();});
+  const aux=$('.ticket-detail-section');if(aux)aux.hidden=active!=='invoice';
+  if(active==='invoice'){
+   const headers=['序号','操作','发票单位','发票代码','发票号码','发票文件','票面含税金额','是否冲红','总金额','业务员分摊','税额','价税合计','发票日期','发票超期日期','备注','处理结果'];
+   $('#pc-registration-panel').innerHTML='<div class="pc-original-scroll"><table class="small-table pc-original-invoices"><thead><tr>'+headers.map(t=>'<th>'+(['票面含税金额','是否冲红','处理结果'].includes(t)?changed(t):t)+(t==='价税合计'?' <span class="face-amount-help" tabindex="0" data-tooltip="本次登记的含税金额合计，不是整张发票的票面金额。">?</span>':'')+'</th>').join('')+'</tr></thead><tbody>'+groups.map((g,i)=>{const c=g.card||{},file=c.file,net=netFor(g),split=c.invoiceStockSalesmanDTOS||c.apportion||[];
+   const fileHTML=file&&c.url?'<button class="link" data-reg-file="'+i+'">查看</button>':'—';
+   const hasOrders=!c.products&&ordersFor(g).length>0;
+   const menu='<details class="row-menu"><summary aria-label="发票明细操作">⋮</summary><div><button class="link" data-pc-product="'+i+'">详情</button>'+(hasOrders?'<button class="link" data-reg-orders="'+i+'">关联订单详情</button>':'')+'</div></details>';
+   return '<tr><td>'+String(i+1).padStart(2,'0')+'</td><td>'+menu+'</td><td>'+pcDetailValue(c.seller||g.items[0].record.seller)+'</td><td>'+pcDetailValue(c.code)+'</td><td>'+pcDetailValue(g.number)+'</td><td>'+fileHTML+'</td><td>'+changed(pcDetailMoney(c.face))+'</td><td>'+changed(c.color==='红字'?'是':c.color==='蓝字'?'否':'—')+'</td><td>'+pcDetailMoney(net)+'</td><td>'+pcDetailValue(split.map(x=>x.name+'（'+money(x.amount)+'）').join('、'))+'</td><td>'+pcDetailMoney(net===null?null:g.total-net)+'</td><td>'+money(g.total)+'</td><td>'+pcDetailValue(c.date)+'</td><td>'+pcDetailValue(c.over)+'</td><td>'+pcDetailValue(c.remark)+'</td><td>'+changed(pcDetailValue([...new Set(g.items.map(x=>x.line.state))].join('、')))+'</td></tr>';}).join('')+'</tbody></table></div>';
+   document.querySelectorAll('[data-reg-file]').forEach(b=>b.onclick=()=>openInvoiceFile(groups[Number(b.dataset.regFile)].card.url));
+   document.querySelectorAll('[data-pc-product]').forEach(b=>openTab(b,'product','发票商品详情'));
+   document.querySelectorAll('[data-reg-orders]').forEach(b=>openTab(b,'orders','关联订单详情'));
+  }else{const g=groups[tab.group],c=g.card||{};
+   if(tab.kind==='orders')$('#pc-registration-panel').innerHTML=pcRelatedOrderHTML(ordersFor(g),g.items[0].record);
+   else{const fields=[['发票单位',c.seller||g.items[0].record.seller],['发票代码',c.code],['发票号码',g.number],['发票日期',c.date],['超期日期',c.over],['发票金额',pcDetailMoney(netFor(g))],['业务员分摊',(c.invoiceStockSalesmanDTOS||c.apportion||[]).map(x=>x.name+'（'+money(x.amount)+'）').join('、')],['备注',c.remark]];
+    $('#pc-registration-panel').innerHTML='<div class="pc-original-header pc-product-header">'+fields.map(([k,v])=>'<div><span>'+k+'：</span>'+pcDetailValue(v)+'</div>').join('')+'</div>'+pcProductsTable(productsFor(g))+'<p class="pc-original-sum">合计金额：'+pcDetailMoney(netFor(g))+'</p>';
+   }
+  }
+ }
+ function openTab(button,kind,label){button.onclick=()=>{const group=Number(button.dataset.regOrders??button.dataset.pcProduct),id=kind+'-'+group;if(!tabs.some(t=>t.id===id))tabs.push({id,label,kind,group});active=id;draw();};}
+ draw();
+ if(embeddedHost&&meta.cards?.length){const section=document.createElement('section');section.className='ticket-detail-section';section.innerHTML=meta.cards.map((c,i)=>'<div class="ticket-info-section"><button class="link" data-embedded-ticket="'+i+'">查看票面信息 · '+ticketEscape(c.number)+'</button><div hidden>'+ticketReadout(c.info)+'</div></div>').join('');embeddedHost.append(section);section.querySelectorAll('[data-embedded-ticket]').forEach(b=>b.onclick=()=>b.nextElementSibling.hidden=!b.nextElementSibling.hidden);}
+}
+function orderDetail(invoice,order){
+ const seen=new Set(),orders=[];
+ for(const line of invoice.lines.filter(l=>l.order===order)){const cards=line.registrationMeta?.cards||[];for(const c of cards.filter(c=>c.number===invoice.number))for(const o of c.orders||[])if(o.code===order&&!seen.has(o)){seen.add(o);orders.push(o);}}
+ if(!orders.length)orders.push({code:order,amount:invoice.lines.filter(l=>l.order===order&&live(l)).reduce((n,l)=>n+Number(l.amount),0),products:[]});
+ open('关联订单详情',pcRelatedOrderHTML(orders,invoice),[{label:'关闭',action:close}]);
+}
+{const style=document.createElement('style');style.textContent='.pc-original-header{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px 24px;padding:12px 0 24px;font-size:12px;line-height:1.8}.pc-original-header .pc-wide{grid-column:1/-1}.pc-original-header span{color:#6c7d8f}.pc-original-tabs{display:flex;align-items:center;gap:16px;border-bottom:1px solid #dae2eb;margin:12px 0 0}.pc-original-tab{display:flex;align-items:center;border-bottom:2px solid transparent}.pc-original-tab.active{border-color:#278be7}.pc-original-tab button{border:0;background:transparent;font-size:12px;color:#65778a;padding:10px 5px}.pc-original-tab.active button{color:#2589e3}.pc-original-scroll{overflow:auto;width:100%}.pc-original-invoices{min-width:1950px}.pc-original-products{min-width:1400px}.pc-original-invoices td,.pc-original-products td{white-space:nowrap}.pc-detail-change{color:#b45309}.pc-original-order{padding:18px 0;border-bottom:1px solid #e2e8ef}.pc-original-order-title{float:left;background:#f1f5fa;padding:6px 10px;margin-right:12px}.pc-original-order-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:6px 14px 22px;font-size:12px}.pc-original-order-fields span{color:#6c7d8f}.pc-original-sum{font-size:12px;padding:14px 0;color:#2589e3}.pc-original-empty{text-align:center;padding:48px;color:#8a99a9}.pc-original-invoices .row-menu>div{min-width:115px}.pc-product-header{margin-top:14px}@media(max-width:800px){.pc-original-header{grid-template-columns:repeat(2,minmax(0,1fr))}.pc-original-order-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}';document.head.append(style);}
+
 function detail(invoice,lineId){
  const a=amounts(invoice),lines=lineId?invoice.lines.filter(l=>l.id===lineId):invoice.lines;
  const table='<div style="overflow:auto"><table class="small-table"><tr><th>登记明细</th><th>订单明细</th><th>含税金额</th><th>状态</th><th>方式</th><th>登记人</th><th>登记时间</th><th>最近操作人</th><th>最近操作</th><th>操作时间</th></tr>'+lines.map(l=>'<tr><td>'+l.id+'</td><td>'+l.order+'</td><td>'+money(l.amount)+'</td><td>'+l.state+'</td><td>'+l.source+'</td><td>张石磊</td><td>2026-11-18 09:30</td><td>'+(['退回','作废','报损'].includes(l.state)?'李敏':'张石磊')+'</td><td>'+l.state+'</td><td>2026-11-19 10:00</td></tr>').join('')+'</table></div><p class="subtle">登记人及操作记录均为演示数据。当前页包含有效登记及退回、作废、报损历史。</p>';
@@ -671,11 +712,6 @@ function registrationTableLayout(markup){
  return '<div class="legacy-registration">'+file+basic+'<div class="single-other registration-attachments">'+label('reg-attachments')+'</div>'+datalist+notice+'<div class="single-heading"><strong>发票明细</strong></div>'+ledgerSummary+'<div class="legacy-invoice-scroll"><table class="small-table legacy-invoice-table"><thead><tr>'+headers.map(s=>'<th>'+s+(s.startsWith('价税合计')?registrationAmountHelp():'')+'</th>').join('')+'</tr></thead><tbody><tr>'+cells.map(s=>'<td>'+s+'</td>').join('')+'</tr></tbody></table></div>'+preview+'<div class="legacy-order-controls" hidden>'+hiddenOrderControls+'</div>'+popups+'</div>';
 }
 
-function orderDetail(invoice,order){
- const links=invoice.lines.filter(l=>l.order===order);
- const total=links.filter(live).reduce((s,l)=>s+l.amount,0);
- open('关联订单详情','<div class="fields"><div>采购订单号：'+order.split(' / ')[0]+'</div><div>供应商：'+invoice.seller+'</div><div>订单明细编号：'+order.split(' / ')[1]+'</div><div>业务员：—</div></div><h3>商品及发票关联明细</h3><div style="overflow:auto"><table class="small-table"><tr><th>产品名称</th><th>规格型号</th><th>单位</th><th>本次关联数量</th><th>含税单价</th><th>含税总价</th><th>税率</th><th>税额</th><th>未税总价</th></tr><tr><td>设备及配件（示例）</td><td>—</td><td>件</td><td>—</td><td>—</td><td>'+money(total)+'</td><td>—</td><td>—</td><td>—</td></tr></table></div><h3>关联登记</h3><table class="small-table"><tr><th>登记单号</th><th>含税关联金额</th><th>状态</th></tr>'+links.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table>');
-}
 function excessDetail(invoice){
  const a=amounts(invoice),active=invoice.lines.filter(live);
  open('登记超额明细','<div class="fields"><div>发票号码：'+invoice.number+'</div><div>金蝶票面含税金额：'+money(invoice.total)+'</div><div>已匹配金额：'+money(a.matched)+'</div><div class="warning">超出金额：'+money(a.excess)+'</div></div><p>以下为该票全部有效登记，请核对需要处理的登记明细。</p><table class="small-table"><tr><th>登记单号</th><th>采购订单号</th><th>登记含税金额</th><th>登记状态</th></tr>'+active.map(l=>'<tr><td><button class="link" data-line="'+l.id+'" data-invoice="'+invoice.number+'">'+l.id+'</button></td><td><button class="link" data-order="'+l.order+'" data-invoice="'+invoice.number+'">'+l.order.split(' / ')[0]+'</button></td><td>'+money(l.amount)+'</td><td>'+l.state+'</td></tr>').join('')+'</table><p class="subtle">超额为整票合计差额，未自动指定某一条登记为错误明细。</p>');
@@ -683,30 +719,29 @@ function excessDetail(invoice){
 function redDetail(invoice){
  open('红冲原因','<p>发票号码：'+invoice.number+'</p>'+(invoice.redForms||[]).map(form=>'<p style="padding:16px;background:#f6f8fb">'+form.reason+'</p>').join(''));
 }
+function pcInvoiceOrders(invoice){const orders=[],seen=new Set();for(const line of invoice.lines){const meta=line.registrationMeta,card=meta?.cards?.find(c=>c.number===invoice.number);if(card){if(seen.has(card))continue;seen.add(card);orders.push(...(card.orders||[]));}else if(line.order){orders.push({code:line.order,amount:line.amount,products:[]});}}return orders;}
 function invoiceDetail(invoice){
- const a=amounts(invoice);
- const fields=[
- ['发票号码',invoice.number],['发票类型',invoice.synced?invoice.type||'—':'—'],['来源',invoice.origin],
- ['蓝/红',Number(invoice.total)<0?'红字发票':'蓝字发票'],['发票状态',invoiceTicketState(invoice)],['匹配状态',status(invoice)],
- ['发票金额（未税）',ticketMoney(invoice.ticketInfo?.net)],['发票税额',ticketMoney(invoice.ticketInfo?.tax)],['价税合计',money(invoice.total)],
- ['已匹配金额',money(a.matched)],['未匹配金额',a.unmatched===null?'—':money(a.unmatched)],
- ['开票方名称',invoice.seller],['开票方统一社会信用代码/纳税人识别号',ticketEscape(invoice.ticketInfo?.sellerTax||'—')],
- ['购买方名称',ticketEscape(invoice.ticketInfo?.buyer||'—')],['购买方统一社会信用代码/纳税人识别号',ticketEscape(invoice.ticketInfo?.buyerTax||'—')],['开票人',ticketEscape(invoice.ticketInfo?.issuer||'—')],['开票日期','2026-11-18'],
- ['认证状态','待认证'],['认证日期','—'],['做账状态','未生成'],['勾选认证时间','—'],
- ['PDF文件',collectionFileHTML(invoice)],['OFD文件','—'],['XML文件','—'],['发票链接','—'],['备注','—'],
- ['金蝶采集状态',invoice.synced?'已采集':'待采集'],['台账建档来源',invoice.origin],['红冲原因',(invoice.redForms||[]).map(form=>form.reason).join('；')||'—']
- ];
- open('进项发票详情',(a.excess?'<div style="padding:14px;background:#fff2f0;border:1px solid #ffccc7;color:#b83c32">登记超额 '+money(a.excess)+' ｜ 票面含税金额 '+money(invoice.total)+' ｜ 已匹配金额 '+money(a.matched)+'。请在关联登记明细中核对。</div>':'')+'<div class="invoice-grid">'+fields.map(([name,value])=>'<div><small>'+name+'</small>'+value+'</div>').join('')+'</div><div class="tabbar"><button id="goods-tab">商品明细</button><button id="register-tab">关联进项登记单详情</button><button id="orders-tab">关联订单详情</button></div><div id="invoice-tab-content"></div>');
- const tab=$('#invoice-tab-content');
- $('#goods-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>商品名称</th><th>规格型号</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th><th>税率</th><th>税额</th></tr><tr><td>设备及配件（示例）</td><td>—</td><td>件</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></table>';};
- $('#register-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>单据编号</th><th>供应商</th><th>业务员</th><th>发票状态</th><th>总金额</th><th>登记人</th><th>登记时间</th></tr>'+[...new Set(invoice.lines.map(line=>line.id))].map(id=>{
- const lines=invoice.lines.filter(line=>line.id===id);
- return '<tr><td><button class="link" data-line="'+id+'" data-invoice="'+invoice.number+'">'+id+'</button></td><td>'+invoice.seller+'</td><td>—</td><td>'+lines[0].state+'</td><td>'+money(lines.reduce((sum,line)=>sum+line.amount,0))+'</td><td>张石磊（示例）</td><td>2026-11-18 09:30</td></tr>';
- }).join('')+'</table>';};
- $('#orders-tab').onclick=()=>{tab.innerHTML='<table class="small-table"><tr><th>采购订单号</th><th>订单明细编号</th></tr>'+[...new Set(invoice.lines.map(line=>line.order))].map(order=>'<tr><td><button class="link" data-order="'+order+'" data-invoice="'+invoice.number+'">'+order.split(' / ')[0]+'</button></td><td>'+order.split(' / ')[1]+'</td></tr>').join('')+'</table>';};
-
- if(a.excess)$('#register-tab').onclick();else $('#goods-tab').onclick();
+ const a=amounts(invoice),info=invoice.ticketInfo||{};
+ const fields=[['发票号码',invoice.number],['发票类型',invoice.synced?invoice.type||'—':'—'],['来源',invoice.origin],['蓝/红',Number(invoice.total)<0?'红字发票':'蓝字发票'],['发票状态',invoiceTicketState(invoice)],['匹配状态',status(invoice)],['发票金额',ticketMoney(info.net)],['发票税额',ticketMoney(info.tax)],['价税合计',hasFace(invoice)?money(invoice.total):'—'],['已匹配金额',money(a.matched)],['未匹配金额',ticketMoney(a.unmatched)],['开票方名称',invoice.seller],['开票方统一社会信用代码/纳税人识别号',info.sellerTax],['购买方名称',info.buyer],['购买方统一社会信用代码/纳税人识别号',info.buyerTax],['开票人',info.issuer],['开票日期',invoice.date||'—']];
+ open('进项发票详情','<div class="pc-original-header">'+fields.map(([k,v])=>'<div><span>'+k+'：</span>'+pcDetailValue(v)+'</div>').join('')+'<div><span>PDF文件：</span>'+collectionFileHTML(invoice)+'</div><div>OFD文件：—</div><div>XML文件：—</div><div class="pc-wide">发票链接：—</div><div class="pc-wide">备注：'+pcDetailValue(invoice.remark)+'</div><div>金蝶采集状态：'+(invoice.synced?'已采集':'待采集')+'</div>'+(a.excess?'<div class="pc-wide pc-detail-change">登记超额 '+money(a.excess)+'</div>':'')+'</div><div class="pc-original-tabs" id="pc-ledger-tabs"></div><div id="pc-ledger-panel"></div>',[{label:'关闭',action:close}]);
+ const tabs=[{id:'goods',label:'商品明细'},{id:'register',label:'关联进项登记单详情'},{id:'orders',label:'关联订单详情'}];let active='goods';
+ function draw(){
+  $('#pc-ledger-tabs').innerHTML=tabs.map(t=>'<span class="pc-original-tab '+(t.id===active?'active':'')+'"><button data-ledger-detail-tab="'+t.id+'">'+t.label+'</button>'+(t.registration?'<button data-ledger-close-tab="'+t.id+'" aria-label="关闭登记详情">×</button>':'')+'</span>').join('');
+  document.querySelectorAll('[data-ledger-detail-tab]').forEach(b=>b.onclick=()=>{active=b.dataset.ledgerDetailTab;draw();});document.querySelectorAll('[data-ledger-close-tab]').forEach(b=>b.onclick=()=>{tabs.splice(tabs.findIndex(t=>t.id===b.dataset.ledgerCloseTab),1);active='register';draw();});
+  const panel=$('#pc-ledger-panel'),tab=tabs.find(t=>t.id===active);
+  if(tab.registration){renderPCRegistration(invoice,tab.registration,panel);return;}
+  if(active==='orders'){panel.innerHTML=pcRelatedOrderHTML(pcInvoiceOrders(invoice),invoice);return;}
+  if(active==='goods'){
+   const names=['序号','货物或应税劳务名称','规格型号','税收分类编码','数量','单位','未税单价','未税金额','税率（%）','税额','价税合计'],products=invoice.collectedProducts||[];
+   panel.innerHTML='<div class="pc-original-scroll"><table class="small-table pc-original-products"><thead><tr>'+names.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+products.map((p,i)=>'<tr>'+[i+1,p.itemName,p.specifications,p.taxCode,p.quantity,p.unit,pcDetailMoney(p.price),pcDetailMoney(p.amount),p.taxRate,pcDetailMoney(p.taxAmount),pcDetailMoney(p.totalAmount)].map(v=>'<td>'+pcDetailValue(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+(products.length?'':'<div class="pc-original-empty">暂无数据</div>')+'</div>';return;
+  }
+  const ids=[...new Set(invoice.lines.map(l=>l.id))],names=['序号','单据编号','供应商','业务员','发票状态','发票类别','总金额','制单员','制单时间','备注'];
+  panel.innerHTML='<div class="pc-original-scroll"><table class="small-table pc-original-products"><thead><tr>'+names.map(t=>'<th>'+t+'</th>').join('')+'</tr></thead><tbody>'+ids.map((id,i)=>{const lines=invoice.lines.filter(l=>l.id===id),meta=lines.find(l=>l.registrationMeta)?.registrationMeta||{};return '<tr><td>'+(i+1)+'</td><td><button class="link" data-pc-ledger-registration="'+ticketEscape(id)+'">'+ticketEscape(id)+'</button></td>'+[meta.supplier||invoice.seller,meta.agent,registrationDocumentState(lines.map(l=>l.state)),meta.category,money(lines.reduce((n,l)=>n+Number(l.amount),0)),meta.creator,meta.created,meta.remark].map(v=>'<td>'+pcDetailValue(v)+'</td>').join('')+'</tr>';}).join('')+'</tbody></table></div>';
+  panel.querySelectorAll('[data-pc-ledger-registration]').forEach(b=>b.onclick=()=>{const id='detail-'+b.dataset.pcLedgerRegistration;if(!tabs.some(t=>t.id===id))tabs.push({id,label:'进项发票登记详情',registration:b.dataset.pcLedgerRegistration});active=id;draw();});
+ }
+ draw();
 }
+
 function ledgerSnapshot(invoice){
  const a=amounts(invoice);
  return {number:invoice.number,info:{...(invoice.ticketInfo||{})},type:invoice.type||null,face:invoice.total,synced:invoice.synced,matched:a.matched,unmatched:a.unmatched,excess:a.excess,status:status(invoice),otherSystem:!!invoice.otherSystem,lines:invoice.lines.map(l=>({id:l.id,order:l.order,amount:l.amount,state:l.state}))};
